@@ -48,22 +48,20 @@ class Box{
         }
     }
     
-    collision(objList, obj) {
+    collision(obj, otherObj) {
         // Checks collidion between two objects returns false if there is a collision
-        for (let otherObj of objList){
-            if (otherObj !== obj){
-                if (obj.x + obj.width + obj.speedX >= otherObj.x &&
-                    obj.x + obj.speedX <= otherObj.x + otherObj.width &&
-                    Math.round(obj.y) + obj.height >= otherObj.y &&
-                    Math.round(obj.y) <= otherObj.y + otherObj.height){
-                        return false
-                        
-                }
+        if (otherObj !== obj){
+            if (obj.x + obj.width + obj.speedX >= otherObj.x &&
+                obj.x + obj.speedX <= otherObj.x + otherObj.width &&
+                Math.round(obj.y) + obj.height + obj.deltaY >= otherObj.y &&
+                Math.round(obj.y) + obj.deltaY <= otherObj.y + otherObj.height){
+                    return false
+                    
             }
         }
         return true
     }
-    
+
     movement(objList, obj){
         // Allows the player to move unless they are going to move into an object
         this.speedX = 0
@@ -90,62 +88,42 @@ class Box{
         this.x += this.speedX
         return
     }
+    
+    /*
+    */
+   gravity(objList, obj) {
+       // Checks if we are in the air and if we are make the player accelerate down
+       this.deltaY += gravity
+       if (this.playable || this == enemy) {
+           this.y += this.deltaY
+       }
+       updateGravity = false
+       for (let otherObj of objList) {
+           
+           if ((obj !== otherObj &&
+            this.playable) ||
+            (obj !== otherObj &&
+            obj == enemy)) {
 
-    gravity(objList, obj) {
-        // Checks if we are in the air and if we are make the player accelerate down
-        updateGravity = false
-        for (let otherObj of objList) {
-            if (spacePress && this.playable && otherObj !== obj || this == enemy && enemyJump) {
-                this.y += this.deltaY
-                break
-            }
-            if (obj !== otherObj &&
-                this.playable ||
-                obj !== otherObj &&
-                obj == enemy) {
-
-                    if (this.withinCanvas &&
-                        this.collision(objList, obj)) {
-
-                        if (this.x + this.width >= otherObj.x &&
-                            this.x <= otherObj.x + otherObj.width) {
-                                console.log("here2")
-                            if (this.y + this.height + this.deltaY > otherObj.y &&
-                                this.y < otherObj.y + otherObj.height) {
-                                let checkY = otherObj.y - Math.round(this.height)
-                                console.log(this.y)
-                                console.log(otherObj.y + otherObj.height)
-                                //updateGravity = false
+                    if (!(this.collision(obj, otherObj))) {
+                            if (this.deltaY < 0) {
+                                this.y = otherObj.y + otherObj.height
+                                this.deltaY = 0
                             }
-                            if (checkY < otherObj.y + otherObj.height &&
-                                checkY + 1 > otherObj.y + otherObj.height) {
-                                    console.log("this code runs")
-                                if (this.deltaY < 0) {
-                                    this.deltaY = 0
-                                    this.y = otherObj.y + otherObj.height
-                                }
-                                updateGravity = true
+                            else if (this.deltaY > 0) {
+                                this.y = otherObj.y - this.height
+                                this.deltaY = 0
                             }
-                        }
-                        else {
-                            updateGravity = true
-                        }
                     }
-                    else {
-                        this.deltaY = 0
-                    }         
             }
         }
-        if (updateGravity) {
-            this.y += this.deltaY
-        }
-        this.deltaY += gravity
+
     }
 
     jump(objList, obj) {
         // Checks if we are on the ground and if we are make us jump up
-        if (!this.collision(objList, obj)){
-            for (let otherObj of objList) {
+        for (let otherObj of objList) {
+                if (!this.collision(obj, otherObj)){
                 if (obj !== otherObj &&
                     this.x + this.width + this.speedX > otherObj.x &&
                     this.x + this.speedX < otherObj.x + otherObj.width) {
@@ -261,7 +239,7 @@ const floor = new Box(canvas.width * -1, canvas.height - 5, canvas.width + 400, 
 const floor2 = new Box(550, canvas.height - 5, canvas.width * 2, 5, 0, 0, 0, "blue", false)
 
 objectList.push(player)
-//objectList.push(enemy)
+objectList.push(enemy)
 objectList.push(block)
 objectList.push(block2)
 objectList.push(floor)
