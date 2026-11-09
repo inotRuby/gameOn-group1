@@ -31,24 +31,25 @@ class GameObjects {
     }
 
     collision(obj, otherObj) {
-        // Checks collidion between two objects returns false if there is a collision
+        // Checks collidion between two objects returns true if there is a collision
         if (otherObj !== obj){
             if (obj.x + obj.width + obj.speedX >= otherObj.x &&
                 obj.x + obj.speedX <= otherObj.x + otherObj.width &&
                 Math.round(obj.y) + obj.height + obj.deltaY >= otherObj.y &&
                 Math.round(obj.y) + obj.deltaY <= otherObj.y + otherObj.height){
-                    return false
+                    console.log("return true")
+                    return true
                     
             }
         }
-        return true
+        return false
     }
 
     update() {
         //extra functions for extending classes
     }
 
-    drawBox() {
+    drawBox(ctx) {
         // Draws all the objects
         if (!this.active) return;
         if (this.image.complete && this.image.src) {
@@ -93,29 +94,7 @@ class MoveableObjects extends GameObjects {
 
     movement(objList, obj){
         // Allows the player to move unless they are going to move into an object
-        this.speedX = 0
-        if (keys["a"] && this.playable) this.speedX = -3
-        if (keys["d"] && this.playable) this.speedX = 3
-        for (let otherObj of objList) {
-            if (this.playable &&
-                otherObj !== obj){
-                if (this.y >= otherObj.y &&
-                    this.y <= otherObj.y + otherObj.height ||
-                    this.y + this.height > otherObj.y &&
-                    this.y + this.height < otherObj.y + otherObj.height){
-                        if (this.x + this.width + this.speedX > otherObj.x &&
-                            this.x + this.speedX <= otherObj.x + otherObj.width) {
-
-                            this.speedX = 0
-                            break
-                        }
-                            
-                        
-                }
-            }
-        }
-        this.x += this.speedX
-        return
+        
     }
 
     update() {
@@ -126,27 +105,24 @@ class MoveableObjects extends GameObjects {
     gravity(objList, obj) {
         // Checks if we are in the air and if we are make the player accelerate down
         this.deltaY += gravity
-        if (this.playable || this == enemy) {
-            this.y += this.deltaY
-        }
-        updateGravity = false
+
+        this.y += this.deltaY
+
         for (let otherObj of objList) {
             
-        if ((obj !== otherObj &&
-            this.playable) ||
-            (obj !== otherObj &&
-            obj == enemy)) {
-
-                    if (!(this.collision(obj, otherObj))) {
-                            if (this.deltaY < 0) {
-                                this.y = otherObj.y + otherObj.height
-                                this.deltaY = 0
-                            }
-                            else if (this.deltaY > 0) {
-                                this.y = otherObj.y - this.height
-                                this.deltaY = 0
-                            }
+        if ((obj !== otherObj)) {
+            console.log(this.collision(obj, otherObj))
+            if ((this.collision(obj, otherObj))) {
+                    if (this.deltaY < 0) {
+                        console.log(this.y)
+                        this.y = otherObj.y + otherObj.height
+                        this.deltaY = 0
                     }
+                    else if (this.deltaY > 0) {
+                        this.y = otherObj.y - this.height
+                        this.deltaY = 0
+                    }
+                }
             }
         }
  
@@ -155,13 +131,15 @@ class MoveableObjects extends GameObjects {
     jump(objList, obj) {
         // Checks if we are on the ground and if we are make us jump up
         for (let otherObj of objList) {
-                if (!this.collision(obj, otherObj)){
-                if (obj !== otherObj &&
-                    this.x + this.width + this.speedX > otherObj.x &&
-                    this.x + this.speedX < otherObj.x + otherObj.width) {
-                        this.deltaY = this.jumpHeight * -1
-                        break
-                    }
+                if (obj !== otherObj) {
+                if (this.collision(obj, otherObj)){
+                    if (this.x + this.width + this.speedX > otherObj.x &&
+                        this.x + this.speedX < otherObj.x + otherObj.width &&
+                        this.y + this.height <= otherObj.y) {
+                            this.deltaY = this.jumpHeight * -1
+                            break
+                        }
+                }
             }
         }
     }
@@ -182,20 +160,54 @@ class StaticObjects extends GameObjects {
 
 class Player extends MoveableObjects {
 
-    constructor(x, y, hp) {
-        super(x, y, 20, 50, "", "pink", 0, 0, 10)
+    constructor(x, y, hp, speedX) {
+        super(x, y, 20, 50, "", "pink", speedX, 0, 15)
         this.hp = hp
     }
 
-    update() {
+    update(objList, obj) {
         //extra logic for the player class
-        super.update()
+        this.movement(objList, obj)
+        this.gravity(objList, obj)
+
+    }
+
+    gravity(objList, obj) {
+        super.gravity(objList, obj)
+    }
+
+    handleMoving(keyList, objList) {
+        this.speedX = 0
+        if (keyList["a"]) this.speedX = -3
+        if (keyList["d"]) this.speedX = 3
+        if (keyList[" "]) this.jump(objList, this)
+    }
+
+    movement(objList, obj) {
+        for (let otherObj of objList) {
+            if (otherObj !== obj){
+                if (this.y >= otherObj.y &&
+                    this.y <= otherObj.y + otherObj.height ||
+                    this.y + this.height > otherObj.y &&
+                    this.y + this.height < otherObj.y + otherObj.height){
+                        if (this.x + this.width + this.speedX > otherObj.x &&
+                            this.x + this.speedX <= otherObj.x + otherObj.width) {
+
+                            this.speedX = 0
+                            break
+                        }
+                            
+                        
+                }
+            }
+        }
+        this.x += this.speedX
+        return
     }
 
     death(objList, obj) {
         // Check if player died by any means added in future and draw gameover! + restart button
-        if (this.playable &&
-            this.y - this.deltaY >= canvas.height) {
+        if (this.y - this.deltaY >= canvas.height) {
                 playerAlive = false
             }
         if (!(playerAlive) && !(playerWin)) {
@@ -214,15 +226,15 @@ class Player extends MoveableObjects {
     }
 
     win() {
-        if(this.playable) {
-            if(this.x >= 550 &&
-                this.y + this.height >= canvas.height - 10) {
-                    if (playerAlive) {
-                        playerWin = true
-                        
-                    }
+
+        if(this.x >= 550 &&
+            this.y + this.height >= canvas.height - 10) {
+                if (playerAlive) {
+                    playerWin = true
+                    
                 }
-        }
+            }
+        
         if (playerWin) {
             ctx.fillStyle = "yellow"
             ctx.font = "150px sans serif"
@@ -240,12 +252,16 @@ class Player extends MoveableObjects {
 }
 
 class Enemy extends MoveableObjects {
-    constructor(hp) {
-        super(x, y, width, height, imageSrc, color, speedX, deltaY, this.jumpHeight)
+    constructor(hp, x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight) {
+        super(x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight)
         this.hp = hp
     }
 
     update(objList, obj) {
+        this.movement(objList, obj)
+    }
+
+    movement(objList, obj) {
         for(let otherObj of objList) {
             if (otherObj.playable && obj == enemy) {
                 if (this.x + this.width/2 > otherObj.x + otherObj.width/2) {
@@ -492,46 +508,11 @@ class Box{
 }
 
 
-//const objName = new Box(x, y, width, height, speedX, deltaY, jumpHeight, color, playable)
-const player = new Box(50, canvas.height - 30, 10, 25, 0, 0, 10, "pink", true)
-const enemy = new Box(325, 175, 10, 25, 0, 0, 10, "red", false )
-const block = new Box(160, 275, 50, 50, 0, 0, 0, "grey", false)
-const block2 = new Box(300, 200, 50, 50, 0, 0, 0, "grey", false)
-const floor = new Box(canvas.width * -1, canvas.height - 5, canvas.width + 400, 5, 0, 0, 0, "green", false)
-const floor2 = new Box(550, canvas.height - 5, canvas.width * 2, 5, 0, 0, 0, "blue", false)
-
-objectList.push(player)
-objectList.push(enemy)
-objectList.push(block)
-objectList.push(block2)
-objectList.push(floor)
-objectList.push(floor2)
-
 
 const keys = {}
 
 // Event listeners for when we click certain keys or mouse
-window.addEventListener("keydown", function(e){
-    keys[e.key] = true;
-})
-window.addEventListener("keyup", function(e){
-    keys[e.key] = false;
-})
-window.addEventListener("keypress", function(e){
-    if (e.key == " ") {
-        spacePress = true
-        player.jump(objectList, player)
-    }
-})
-window.addEventListener("mousedown", function(e){
-    if (e.offsetX >= canvas.width/2 - 150 &&
-        e.offsetX <= canvas.width/2 + 150 &&
-        e.offsetY >= 175 &&
-        e.offsetY <= 175 + 150 &&
-        !(playerAlive) || playerWin) {
-            location.reload()
-        }
-})
+
 
 class GameEngine {
 
@@ -541,7 +522,7 @@ class GameEngine {
         this.keyList = {}
         this.objectList = []
 
-        this.player = new Player(50, canvas.height - 30, 3)
+        this.player = new Player(50, 300, 3, 0)
         this.enemy = new Enemy(3)
         this.block = new Block(160, 275, 50, 50, "", "grey")
         this.block2 = new Block(300, 200, 50, 50, "", "grey")
@@ -559,19 +540,14 @@ class GameEngine {
     }
 
     initInput() {
-        window.addEventListener("keydown", function(e){
+        window.addEventListener("keydown", (e) => {
             this.keyList[e.key] = true;
         })
-        window.addEventListener("keyup", function(e){
+        window.addEventListener("keyup", (e) => {
             this.keyList[e.key] = false;
         })
-        window.addEventListener("keypress", function(e){
-            if (this.keyList[e.key] == " ") {
-                spacePress = true
-                player.jump(objectList, player)
-            }
-        })
-        window.addEventListener("mousedown", function(e){
+
+        window.addEventListener("mousedown", (e) => {
             if (e.offsetX >= canvas.width/2 - 150 &&
                 e.offsetX <= canvas.width/2 + 150 &&
                 e.offsetY >= 175 &&
@@ -582,26 +558,30 @@ class GameEngine {
         })
     }
 
+    startGame() {
+        requestAnimationFrame(() => this.gameloop());
+    }
+
     gameloop(){
+
+        this.player.handleMoving(this.keyList, this.objectList)
         // The gameloop function which makes everything else run
         ctx.clearRect(0, 0, canvas.width, canvas.height)
-        for (let obj of objectList) {
-            obj.movement(objectList, obj)
-            obj.update(objectList, obj)
-            obj.gravity(objectList, obj)
-            player.screenChange(objectList)
-            obj.drawBox()
-            obj.death(objectList, obj)
-            obj.win()
+        for (let obj of this.objectList) {
+            obj.update(this.objectList, obj)
+            obj.drawBox(this.ctx)
         }
         spacePress = false
         enemyJump = false
-        requestAnimationFrame(gameloop)
+        requestAnimationFrame(() => this.gameloop());
     }
 
 }
 
-GameEngine.gameloop()
+window.onload = () => {
+    const game = new GameEngine("gameCanvas")
+    game.startGame()
+}
 
 /*
 Current issues existing in the code:
