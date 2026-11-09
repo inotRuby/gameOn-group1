@@ -1,6 +1,29 @@
 const canvas = document.getElementById("gameCanvas")
 const ctx = canvas.getContext("2d")
 const objectList = []
+const backgroundtheme = new Audio('edited ancient soundtrack.mp3')
+const basejump = new Audio('Jump.mp3')
+const baseland = new Audio('Land.mp3')
+const playerdeath = new Audio('highdeath sfx.mp3')
+let canland = false
+let candie = true
+backgroundtheme.loop = true
+
+function jumpoverlap(){
+    const jump = basejump.cloneNode()
+    jump.play()
+}
+function landoverlap(){
+    const land = baseland.cloneNode()
+    land.play()
+}
+/*
+document.addEventListener('keydown', (e) => {
+    if(e.code){
+        backgroundtheme.play();
+    }
+})
+*/
 
 // The gravity value
 const gravity = 0.4
@@ -65,8 +88,8 @@ class Box{
     movement(objList, obj){
         // Allows the player to move unless they are going to move into an object
         this.speedX = 0
-        if (keys["a"] && this.playable) this.speedX = -3
-        if (keys["d"] && this.playable) this.speedX = 3
+        if (keys["ArrowLeft"] && this.playable && playerAlive) this.speedX = -3
+        if (keys["ArrowRight"] && this.playable && playerAlive) this.speedX = 3
         for (let otherObj of objList) {
             if (this.playable &&
                 otherObj !== obj){
@@ -97,6 +120,7 @@ class Box{
        if (this.playable || this == enemy) {
            this.y += this.deltaY
        }
+       console.log(this.deltaY)
        updateGravity = false
        for (let otherObj of objList) {
            
@@ -109,10 +133,19 @@ class Box{
                             if (this.deltaY < 0) {
                                 this.y = otherObj.y + otherObj.height
                                 this.deltaY = 0
+                                landoverlap()                    
                             }
-                            else if (this.deltaY > 0) {
+                            if (this.deltaY <0.4|| this.deltaY>0.4){
+                                canland = true
+                            }
+                            if (this.deltaY > 0) {
                                 this.y = otherObj.y - this.height
                                 this.deltaY = 0
+                                if(canland && obj == player || obj == enemy){
+                                    canland = false
+                                    landoverlap()                                    
+                                }
+                                
                             }
                     }
             }
@@ -128,7 +161,8 @@ class Box{
                     this.x + this.width + this.speedX > otherObj.x &&
                     this.x + this.speedX < otherObj.x + otherObj.width) {
                         this.deltaY = this.jumpHeight * -1
-                        break
+                        canland = true
+                        jumpoverlap()                           
                     }
             }
         }
@@ -170,7 +204,7 @@ class Box{
         if (!(playerAlive) && !(playerWin)) {
             ctx.fillStyle = "red"
             ctx.font = "150px sans serif"
-            ctx.fillText("Gameover!", 10, canvas.height/2 - 75, canvas.width - 20)
+            ctx.fillText("Gameover!", 140, canvas.height/2 - 100, canvas.width - 20)
 
             ctx.fillStyle = "lightgrey"
             ctx.fillRect(canvas.width/2 - 150, 175, 300, 150)
@@ -179,6 +213,10 @@ class Box{
             ctx.font = "100px sans serif"
             ctx.strokeRect(canvas.width/2 - 150, 175, 300, 150)
             ctx.fillText("Restart?", canvas.width/2 - 140, 280, 280)
+            if(candie){
+                playerdeath.play()
+                candie = false
+            }
         }
     }
 
@@ -195,7 +233,7 @@ class Box{
         if (playerWin) {
             ctx.fillStyle = "yellow"
             ctx.font = "150px sans serif"
-            ctx.fillText("Winner!", 10, canvas.height/2 - 75, canvas.width - 20)
+            ctx.fillText("Winner!", 140, canvas.height/2 - 100, canvas.width - 20)
 
             ctx.fillStyle = "lightgrey"
             ctx.fillRect(canvas.width/2 - 150, 175, 300, 150)
@@ -232,17 +270,23 @@ class Box{
 
 //const objName = new Box(x, y, width, height, speedX, deltaY, jumpHeight, color, playable)
 const player = new Box(50, canvas.height - 30, 10, 25, 0, 0, 10, "pink", true)
-const enemy = new Box(325, 175, 10, 25, 0, 0, 10, "red", false )
-const block = new Box(160, 275, 50, 50, 0, 0, 0, "grey", false)
-const block2 = new Box(300, 200, 50, 50, 0, 0, 0, "grey", false)
-const floor = new Box(canvas.width * -1, canvas.height - 5, canvas.width + 400, 5, 0, 0, 0, "green", false)
-const floor2 = new Box(550, canvas.height - 5, canvas.width * 2, 5, 0, 0, 0, "blue", false)
+const enemy = new Box(325, 175, 10, 25, 0, 0, 8.5, "red", false )
+const block = new Box(150, 400, 300, 10, 0, 0, 0, "grey", false)
+const block2 = new Box(400, 300, 300, 10, 0, 0, 0, "grey", false)
+const block3 = new Box(650, 200, 300, 10, 0, 0, 0, "grey", false)
+const wall = new Box(canvas.width-10,70,20,canvas.height-70,0,0,0,"grey",false)
+const roof = new Box(-1*canvas.width,0,6*canvas.width,10,0,0,0,"grey",false)
+const floor = new Box(canvas.width * -1, canvas.height - 5, canvas.width + 400, 5, 0, 0, 0, "brown", false)
+const floor2 = new Box(550, canvas.height - 5, canvas.width * 2, 5, 0, 0, 0, "brown", false)
 
 objectList.push(player)
-objectList.push(enemy)
+//objectList.push(enemy)
 objectList.push(block)
 objectList.push(block2)
+objectList.push(block3)
+objectList.push(wall)
 objectList.push(floor)
+objectList.push(roof)
 objectList.push(floor2)
 
 
@@ -256,7 +300,7 @@ window.addEventListener("keyup", function(e){
     keys[e.key] = false;
 })
 window.addEventListener("keypress", function(e){
-    if (e.key == " ") {
+    if (e.key == " " && playerAlive) {
         spacePress = true
         player.jump(objectList, player)
     }
