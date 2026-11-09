@@ -1,6 +1,29 @@
 const canvas = document.getElementById("gameCanvas")
 const ctx = canvas.getContext("2d")
 const objectList = []
+const backgroundtheme = new Audio('edited ancient soundtrack.mp3')
+const basejump = new Audio('Jump.mp3')
+const baseland = new Audio('Land.mp3')
+const playerdeath = new Audio('highdeath sfx.mp3')
+let canland = false
+let candie = true
+backgroundtheme.loop = true
+
+function jumpoverlap(){
+    const jump = basejump.cloneNode()
+    jump.play()
+}
+function landoverlap(){
+    const land = baseland.cloneNode()
+    land.play()
+}
+/*
+document.addEventListener('keydown', (e) => {
+    if(e.code){
+        backgroundtheme.play();
+    }
+})
+*/
 
 // The gravity value
 const gravity = 0.4
@@ -360,8 +383,8 @@ class Box{
     movement(objList, obj){
         // Allows the player to move unless they are going to move into an object
         this.speedX = 0
-        if (keys["a"] && this.playable) this.speedX = -3
-        if (keys["d"] && this.playable) this.speedX = 3
+        if (keys["ArrowLeft"] && this.playable && playerAlive) this.speedX = -3
+        if (keys["ArrowRight"] && this.playable && playerAlive) this.speedX = 3
         for (let otherObj of objList) {
             if (this.playable &&
                 otherObj !== obj){
@@ -392,6 +415,7 @@ class Box{
        if (this.playable || this == enemy) {
            this.y += this.deltaY
        }
+       console.log(this.deltaY)
        updateGravity = false
        for (let otherObj of objList) {
            
@@ -404,10 +428,19 @@ class Box{
                             if (this.deltaY < 0) {
                                 this.y = otherObj.y + otherObj.height
                                 this.deltaY = 0
+                                landoverlap()                    
                             }
-                            else if (this.deltaY > 0) {
+                            if (this.deltaY <0.4|| this.deltaY>0.4){
+                                canland = true
+                            }
+                            if (this.deltaY > 0) {
                                 this.y = otherObj.y - this.height
                                 this.deltaY = 0
+                                if(canland && obj == player || obj == enemy){
+                                    canland = false
+                                    landoverlap()                                    
+                                }
+                                
                             }
                     }
             }
@@ -423,7 +456,8 @@ class Box{
                     this.x + this.width + this.speedX > otherObj.x &&
                     this.x + this.speedX < otherObj.x + otherObj.width) {
                         this.deltaY = this.jumpHeight * -1
-                        break
+                        canland = true
+                        jumpoverlap()                           
                     }
             }
         }
@@ -465,7 +499,7 @@ class Box{
         if (!(playerAlive) && !(playerWin)) {
             ctx.fillStyle = "red"
             ctx.font = "150px sans serif"
-            ctx.fillText("Gameover!", 10, canvas.height/2 - 75, canvas.width - 20)
+            ctx.fillText("Gameover!", 140, canvas.height/2 - 100, canvas.width - 20)
 
             ctx.fillStyle = "lightgrey"
             ctx.fillRect(canvas.width/2 - 150, 175, 300, 150)
@@ -474,6 +508,10 @@ class Box{
             ctx.font = "100px sans serif"
             ctx.strokeRect(canvas.width/2 - 150, 175, 300, 150)
             ctx.fillText("Restart?", canvas.width/2 - 140, 280, 280)
+            if(candie){
+                playerdeath.play()
+                candie = false
+            }
         }
     }
 
@@ -490,7 +528,7 @@ class Box{
         if (playerWin) {
             ctx.fillStyle = "yellow"
             ctx.font = "150px sans serif"
-            ctx.fillText("Winner!", 10, canvas.height/2 - 75, canvas.width - 20)
+            ctx.fillText("Winner!", 140, canvas.height/2 - 100, canvas.width - 20)
 
             ctx.fillStyle = "lightgrey"
             ctx.fillRect(canvas.width/2 - 150, 175, 300, 150)
