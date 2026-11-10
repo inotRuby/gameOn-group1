@@ -1,9 +1,32 @@
 const canvas = document.getElementById("gameCanvas")
 const ctx = canvas.getContext("2d")
 const objectList = []
+const backgroundtheme = new Audio('edited ancient soundtrack.mp3')
+const basejump = new Audio('Jump.mp3')
+const baseland = new Audio('Land.mp3')
+const playerdeath = new Audio('highdeath sfx.mp3')
+let canland = false
+let candie = true
+backgroundtheme.loop = true
+
+function jumpoverlap(){
+    const jump = basejump.cloneNode()
+    jump.play()
+}
+function landoverlap(){
+    const land = baseland.cloneNode()
+    land.play()
+}
+/*
+document.addEventListener('keydown', (e) => {
+    if(e.code){
+        backgroundtheme.play();
+    }
+})
+*/
 
 // The gravity value
-const gravity = 0.4
+let gravconst = 0.4
 
 
 
@@ -29,8 +52,7 @@ class GameObjects {
                 obj.x + obj.speedX <= otherObj.x + otherObj.width &&
                 Math.round(obj.y) + obj.height + obj.deltaY >= otherObj.y &&
                 Math.round(obj.y) + obj.deltaY <= otherObj.y + otherObj.height){
-                    return true
-                    
+                    return true                    
             }
         }
         return false
@@ -96,7 +118,7 @@ class MoveableObjects extends GameObjects {
 
     gravity(objList, obj) {
         // Checks if we are in the air and if we are make the player accelerate down
-        this.deltaY += gravity
+        this.deltaY += gravconst
 
         this.y += this.deltaY
 
@@ -104,11 +126,13 @@ class MoveableObjects extends GameObjects {
             
         if ((obj !== otherObj && otherObj.active)) {
             if ((this.collision(obj, otherObj))) {
-                    if (this.deltaY < 0) {
-                        this.y = otherObj.y + otherObj.height
+                    if (this.deltaY < 0) 
                         this.deltaY = 0
                     }
-                    else if (this.deltaY > 0) {
+                    else if (this.deltaY > 0 && 
+                        (this.x > otherObj.x && this.x < otherObj.x + otherObj.width) ||
+                        (this.x + this.width > otherObj.x && this.x + this.width < otherObj.x + otherObj.width)
+                    ) {
                         this.y = otherObj.y - this.height
                         this.deltaY = 0
                     }
@@ -243,8 +267,8 @@ class Player extends MoveableObjects {
 
     movement(objList, obj) {
         for (let otherObj of objList) {
-            if (otherObj !== obj && otherObj.active){
-                if (this.y >= otherObj.y &&
+            if (otherObj !== obj){
+                if (this.y >= otherObj.y && 
                     this.y <= otherObj.y + otherObj.height ||
                     this.y + this.height > otherObj.y &&
                     this.y + this.height < otherObj.y + otherObj.height){
@@ -253,9 +277,7 @@ class Player extends MoveableObjects {
 
                             this.speedX = 0
                             break
-                        }
-                            
-                        
+                        }                  
                 }
             }
         }
