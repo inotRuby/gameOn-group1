@@ -1,6 +1,29 @@
 const canvas = document.getElementById("gameCanvas")
 const ctx = canvas.getContext("2d")
 const objectList = []
+const backgroundtheme = new Audio('edited ancient soundtrack.mp3')
+const basejump = new Audio('Jump.mp3')
+const baseland = new Audio('Land.mp3')
+const playerdeath = new Audio('highdeath sfx.mp3')
+let canland = false
+let candie = true
+backgroundtheme.loop = true
+
+function jumpoverlap(){
+    const jump = basejump.cloneNode()
+    jump.play()
+}
+function landoverlap(){
+    const land = baseland.cloneNode()
+    land.play()
+}
+/*
+document.addEventListener('keydown', (e) => {
+    if(e.code){
+        backgroundtheme.play();
+    }
+})
+*/
 
 // The gravity value
 let gravconst = 0.4
@@ -110,7 +133,7 @@ class MoveableObjects extends GameObjects {
             
         if ((obj !== otherObj)) {
             if ((this.collision(obj, otherObj))) {
-                    if (this.deltaY < 0) {
+                    if (this.deltaY < 0) 
                         this.deltaY = 0
                     }
                     else if (this.deltaY > 0 && 
@@ -168,6 +191,23 @@ class Player extends MoveableObjects {
         this.movement(objList, obj)
         this.gravity(objList, obj)
 
+        for (let otherObj of objList) {
+            if (otherObj instanceof Enemy) {
+                if (this.collision(obj, otherObj)) {
+                    if (this.hp > 0) {
+                        this.hp -= 1 
+                    }
+                    else {
+                        this.death()
+                    }
+                }
+                if (!(this.active)) {
+                    this.death()
+                }
+
+            }
+        }
+
     }
 
     gravity(objList, obj) {
@@ -201,24 +241,28 @@ class Player extends MoveableObjects {
         return
     }
 
-    death(objList, obj) {
+    death() {
         // Check if player died by any means added in future and draw gameover! + restart button
-        if (this.y - this.deltaY >= canvas.height) {
-                playerAlive = false
-            }
-        if (!(playerAlive) && !(playerWin)) {
-            ctx.fillStyle = "red"
-            ctx.font = "150px sans serif"
-            ctx.fillText("Gameover!", 10, canvas.height/2 - 75, canvas.width - 20)
+        ctx.fillStyle = "red"
+        ctx.font = "150px sans serif"
+        ctx.fillText("Gameover!", 10, canvas.height/2 - 75, canvas.width - 20)
 
-            ctx.fillStyle = "lightgrey"
-            ctx.fillRect(canvas.width/2 - 150, 175, 300, 150)
-            ctx.fillStyle = "black"
-            ctx.lineWidth = 2.5
-            ctx.font = "100px sans serif"
-            ctx.strokeRect(canvas.width/2 - 150, 175, 300, 150)
-            ctx.fillText("Restart?", canvas.width/2 - 140, 280, 280)
-        }
+        ctx.fillStyle = "lightgrey"
+        ctx.fillRect(canvas.width/2 - 150, 175, 300, 150)
+        ctx.fillStyle = "black"
+        ctx.lineWidth = 2.5
+        ctx.font = "100px sans serif"
+        ctx.strokeRect(canvas.width/2 - 150, 175, 300, 150)
+        ctx.fillText("Restart?", canvas.width/2 - 140, 280, 280)
+        this.active = false
+        window.addEventListener("mousedown", (e) => {
+            if (e.offsetX >= canvas.width/2 - 150 &&
+                e.offsetX <= canvas.width/2 + 150 &&
+                e.offsetY >= 175 &&
+                e.offsetY <= 175 + 150) {
+                    location.reload()
+                }
+        })
     }
 
     win() {
@@ -255,11 +299,12 @@ class Enemy extends MoveableObjects {
 
     update(objList, obj) {
         this.movement(objList, obj)
+        this.gravity(objList, obj)
     }
 
     movement(objList, obj) {
         for(let otherObj of objList) {
-            if (otherObj.playable && obj == enemy) {
+            if (otherObj instanceof Player) {
                 if (this.x + this.width/2 > otherObj.x + otherObj.width/2) {
                     this.speedX = -1
                 }
@@ -270,14 +315,12 @@ class Enemy extends MoveableObjects {
                     this.speedX = 0
                 }
                 if (this.y > otherObj.y + otherObj.height) {
-                    enemyJump = true
-                    enemy.jump(objectList, enemy)
+                    this.jump(objList, this)
                 }
                 if (this.x + this.width + this.speedX >= otherObj.x &&
                     this.x + this.speedX <= otherObj.x + otherObj.width &&
                     Math.round(this.y) + this.height >= otherObj.y &&
                     Math.round(this.y) <= otherObj.y + otherObj.height) {
-                    playerAlive = false
                 }
                 this.x += this.speedX
             }
@@ -304,8 +347,8 @@ class GameEngine {
         this.keyList = {}
         this.objectList = []
 
-        this.player = new Player(170, 270, 3, 0)
-        this.enemy = new Enemy(3)
+        this.player = new Player(50, 300, 3, 0)
+        this.enemy = new Enemy(3, 325, 145, 25, 50, "", "red", 0, 0, 10)
         this.block = new Block(160, 275, 50, 50, "", "grey")
         this.block2 = new Block(300, 200, 50, 50, "", "grey")
         this.floor = new Block(canvas.width * -1, canvas.height - 5, canvas.width + 400, 5, "", "green")
@@ -327,16 +370,6 @@ class GameEngine {
         })
         window.addEventListener("keyup", (e) => {
             this.keyList[e.key] = false;
-        })
-
-        window.addEventListener("mousedown", (e) => {
-            if (e.offsetX >= canvas.width/2 - 150 &&
-                e.offsetX <= canvas.width/2 + 150 &&
-                e.offsetY >= 175 &&
-                e.offsetY <= 175 + 150 &&
-                !(playerAlive) || playerWin) {
-                    location.reload()
-                }
         })
     }
 

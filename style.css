@@ -1,0 +1,19 @@
+body {
+    background-image: url("stone wall.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+p{
+    position: relative;
+    font-size: 25px;
+    color: white;
+}
+canvas {
+    position: relative;
+    left: 100px;
+    background-color: white;        
+    border: 4px solid #333;
+    margin-left: 15px;
+    }
+
+
