@@ -126,7 +126,7 @@ class MoveableObjects extends GameObjects {
             
         if ((obj !== otherObj && otherObj.active)) {
             if ((this.collision(obj, otherObj))) {
-                    if (this.deltaY < 0) 
+                    if (this.deltaY < 0) {
                         this.deltaY = 0
                     }
                     else if (this.deltaY > 0 && 
@@ -181,6 +181,15 @@ class Player extends MoveableObjects {
     }
 
     update(objList, obj) {
+
+        if (this.attackCooldown >= 1) {
+            this.attackCooldown += 1
+        }
+        if (this.attackCooldown >= 180) {
+            console.log(this.attackCooldown)
+            this.attackCooldown = 0
+        }
+
         //extra logic for the player class
         if (this.speedX > 0) this.direction = "right";
         if (this.speedX < 0) this.direction = "left";
@@ -340,18 +349,36 @@ class Enemy extends MoveableObjects {
         super(x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight)
         this.hp = hp
         this.attackCooldown = 0
+        this.jumpCooldown = 0
     }
 
     update(objList, obj) {
+
+        
         if (this.active) {
+            
             this.movement(objList, obj)
             this.gravity(objList, obj)
-
             if (this.speedX > 0) this.direction = "right";
             if (this.speedX < 0) this.direction = "left";
-
+            
             if (this.attackCooldown <= 20) {
                 this.attacking(objList)
+            }
+            if (this.attackCooldown >= 1) {
+                this.attackCooldown += 1
+            }
+            if (this.attackCooldown >= 180) {
+                console.log(this.attackCooldown)
+                this.attackCooldown = 0
+            }
+    
+            if (this.jumpCooldown >= 1) {
+                this.jumpCooldown += 1
+            }
+            if (this.jumpCooldown >= 120) {
+                console.log(this.jumpCooldown)
+                this.jumpCooldown = 0
             }
         }
     }
@@ -359,18 +386,20 @@ class Enemy extends MoveableObjects {
     movement(objList, obj) {
         for(let otherObj of objList) {
             if (otherObj instanceof Player) {
-                if (this.x + this.width/2 > otherObj.x + otherObj.width/2) {
+                if (this.x + this.width/2 > otherObj.x + otherObj.width/2 + 1) {
                     this.speedX = -1
                 }
-                else if (this.x + this.width/2 < otherObj.x + otherObj.width/2) {
+                else if (this.x + this.width/2 < otherObj.x + otherObj.width/2 - 1) {
                     this.speedX = 1
                 }
                 else {
                     this.speedX = 0
                 }
                 if (this.y > otherObj.y + otherObj.height) {
-                   this.jump(objList, this)
-                    //this.jump(objList, this)
+                    if (this.jumpCooldown <= 0) {
+                        this.jumpCooldown += 1
+                        this.jump(objList, this)
+                    }
                 }
                 if (this.x + this.width + this.speedX >= otherObj.x &&
                     this.x + this.speedX <= otherObj.x + otherObj.width &&
@@ -384,7 +413,7 @@ class Enemy extends MoveableObjects {
 
     attacking(objList) {
         ctx.fillStyle = "black"
-        this.attackCooldown = 21
+        this.attackCooldown += 1
 
         if (this.direction === "right") {
             ctx.fillRect(this.x + this.width, this.y - 20, 100, this.height + 40)
@@ -448,16 +477,18 @@ class GameEngine {
         this.objectList = []
 
         this.player = new Player(50, 300, 3, 0)
-        this.enemy = new Enemy(3, 325, 145, 25, 50, "", "red", 0, 0, 10)
+        this.enemy = new Enemy(3, 575, 165, 25, 50, "", "red", 0, 0, 10)
         this.block = new Block(160, 275, 50, 50, "", "grey")
         this.block2 = new Block(300, 200, 50, 50, "", "grey")
-        this.floor = new Block(canvas.width * -1, canvas.height - 5, canvas.width + 400, 5, "", "green")
-        this.floor2 = new Block(550, canvas.height - 5, canvas.width * 2, 5, "", "blue")
+        this.block3 = new Block(550, 225, 50, 50, "", "grey")
+        this.floor = new Block(canvas.width * -1, canvas.height - 5, canvas.width + 600, 5, "", "green")
+        this.floor2 = new Block(850, canvas.height - 5, canvas.width * 2, 5, "", "blue")
 
         this.objectList.push(this.player)
         this.objectList.push(this.enemy)
         this.objectList.push(this.block)
         this.objectList.push(this.block2)
+        this.objectList.push(this.block3)
         this.objectList.push(this.floor)
         this.objectList.push(this.floor2)
 
@@ -503,16 +534,6 @@ class GameEngine {
         for (let obj of this.objectList) {
             obj.update(this.objectList, obj)
             obj.drawBox(this.ctx)
-
-            if (obj instanceof Player || obj instanceof Enemy) {
-                if (obj.attackCooldown >= 1) {
-                    obj.attackCooldown += 1
-                }
-                if (obj.attackCooldown >= 180) {
-                    console.log(obj.attackCooldown)
-                    obj.attackCooldown = 0
-                }
-            }
         }
 
         requestAnimationFrame(() => this.gameloop());
