@@ -26,7 +26,7 @@ document.addEventListener('keydown', (e) => {
 */
 
 // The gravity value
-const gravity = 0.4
+let gravconst = 0.4
 
 // For gravity function
 
@@ -60,8 +60,7 @@ class GameObjects {
                 obj.x + obj.speedX <= otherObj.x + otherObj.width &&
                 Math.round(obj.y) + obj.height + obj.deltaY >= otherObj.y &&
                 Math.round(obj.y) + obj.deltaY <= otherObj.y + otherObj.height){
-                    return true
-                    
+                    return true                    
             }
         }
         return false
@@ -126,7 +125,7 @@ class MoveableObjects extends GameObjects {
 
     gravity(objList, obj) {
         // Checks if we are in the air and if we are make the player accelerate down
-        this.deltaY += gravity
+        this.deltaY += gravconst
 
         this.y += this.deltaY
 
@@ -134,11 +133,13 @@ class MoveableObjects extends GameObjects {
             
         if ((obj !== otherObj)) {
             if ((this.collision(obj, otherObj))) {
-                    if (this.deltaY < 0) {
-                        this.y = otherObj.y + otherObj.height
+                    if (this.deltaY < 0) 
                         this.deltaY = 0
                     }
-                    else if (this.deltaY > 0) {
+                    else if (this.deltaY > 0 && 
+                        (this.x > otherObj.x && this.x < otherObj.x + otherObj.width) ||
+                        (this.x + this.width > otherObj.x && this.x + this.width < otherObj.x + otherObj.width)
+                    ) {
                         this.y = otherObj.y - this.height
                         this.deltaY = 0
                     }
@@ -223,7 +224,7 @@ class Player extends MoveableObjects {
     movement(objList, obj) {
         for (let otherObj of objList) {
             if (otherObj !== obj){
-                if (this.y >= otherObj.y &&
+                if (this.y >= otherObj.y && 
                     this.y <= otherObj.y + otherObj.height ||
                     this.y + this.height > otherObj.y &&
                     this.y + this.height < otherObj.y + otherObj.height){
@@ -232,9 +233,7 @@ class Player extends MoveableObjects {
 
                             this.speedX = 0
                             break
-                        }
-                            
-                        
+                        }                  
                 }
             }
         }
@@ -334,235 +333,6 @@ class Block extends StaticObjects {
         super(x, y, width, height, imageSrc, color)
     }
 }
-
-class Box{
-    // Class for our objects
-    constructor(x, y, width, height, speedX, deltaY, jumpHeight, color, playable) {
-    this.x = x
-    this.y = y
-    this.width = width
-    this.height = height
-    this.speedX = speedX
-    this.deltaY = deltaY
-    this.jumpHeight = jumpHeight
-    this.color = color
-    this.playable = playable
-    }
-
-    drawBox() {
-        // Draws all the objects
-        ctx.fillStyle = this.color
-        ctx.fillRect(this.x, this.y, this.width, this.height)
-    }
-
-    withinCanvas() {
-        // Checks if we are within the canvas edges
-        if (this.x + this.width + this.speedX < canvas.width &&
-            this.x + this.speedX > 0 &&
-            this.y + this.height + this.deltaY < canvas.height &&
-            this.y + this.deltaY > 0){
-
-                return true
-        }
-    }
-    
-    collision(obj, otherObj) {
-        // Checks collidion between two objects returns false if there is a collision
-        if (otherObj !== obj){
-            if (obj.x + obj.width + obj.speedX >= otherObj.x &&
-                obj.x + obj.speedX <= otherObj.x + otherObj.width &&
-                Math.round(obj.y) + obj.height + obj.deltaY >= otherObj.y &&
-                Math.round(obj.y) + obj.deltaY <= otherObj.y + otherObj.height){
-                    return false
-                    
-            }
-        }
-        return true
-    }
-
-    movement(objList, obj){
-        // Allows the player to move unless they are going to move into an object
-        this.speedX = 0
-        if (keys["ArrowLeft"] && this.playable && playerAlive) this.speedX = -3
-        if (keys["ArrowRight"] && this.playable && playerAlive) this.speedX = 3
-        for (let otherObj of objList) {
-            if (this.playable &&
-                otherObj !== obj){
-                if (this.y >= otherObj.y &&
-                    this.y <= otherObj.y + otherObj.height ||
-                    this.y + this.height > otherObj.y &&
-                    this.y + this.height < otherObj.y + otherObj.height){
-                        if (this.x + this.width + this.speedX > otherObj.x &&
-                            this.x + this.speedX <= otherObj.x + otherObj.width) {
-
-                            this.speedX = 0
-                            break
-                        }
-                            
-                        
-                }
-            }
-        }
-        this.x += this.speedX
-        return
-    }
-    
-    /*
-    */
-   gravity(objList, obj) {
-       // Checks if we are in the air and if we are make the player accelerate down
-       this.deltaY += gravity
-       if (this.playable || this == enemy) {
-           this.y += this.deltaY
-       }
-       console.log(this.deltaY)
-       updateGravity = false
-       for (let otherObj of objList) {
-           
-           if ((obj !== otherObj &&
-            this.playable) ||
-            (obj !== otherObj &&
-            obj == enemy)) {
-
-                    if (!(this.collision(obj, otherObj))) {
-                            if (this.deltaY < 0) {
-                                this.y = otherObj.y + otherObj.height
-                                this.deltaY = 0
-                                landoverlap()                    
-                            }
-                            if (this.deltaY <0.4|| this.deltaY>0.4){
-                                canland = true
-                            }
-                            if (this.deltaY > 0) {
-                                this.y = otherObj.y - this.height
-                                this.deltaY = 0
-                                if(canland && obj == player || obj == enemy){
-                                    canland = false
-                                    landoverlap()                                    
-                                }
-                                
-                            }
-                    }
-            }
-        }
-
-    }
-
-    jump(objList, obj) {
-        // Checks if we are on the ground and if we are make us jump up
-        for (let otherObj of objList) {
-                if (!this.collision(obj, otherObj)){
-                if (obj !== otherObj &&
-                    this.x + this.width + this.speedX > otherObj.x &&
-                    this.x + this.speedX < otherObj.x + otherObj.width) {
-                        this.deltaY = this.jumpHeight * -1
-                        canland = true
-                        jumpoverlap()                           
-                    }
-            }
-        }
-    }
-
-    update(objList, obj) {
-        for(let otherObj of objList) {
-            if (otherObj.playable && obj == enemy) {
-                if (this.x + this.width/2 > otherObj.x + otherObj.width/2) {
-                    this.speedX = -1
-                }
-                else if (this.x + this.width/2 < otherObj.x + otherObj.width/2) {
-                    this.speedX = 1
-                }
-                else {
-                    this.speedX = 0
-                }
-                if (this.y > otherObj.y + otherObj.height) {
-                    enemyJump = true
-                    enemy.jump(objectList, enemy)
-                }
-                if (this.x + this.width + this.speedX >= otherObj.x &&
-                    this.x + this.speedX <= otherObj.x + otherObj.width &&
-                    Math.round(this.y) + this.height >= otherObj.y &&
-                    Math.round(this.y) <= otherObj.y + otherObj.height) {
-                    playerAlive = false
-                }
-                this.x += this.speedX
-            }
-        }  
-    }
-
-    death(objList, obj) {
-        // Check if player died by any means added in future and draw gameover! + restart button
-        if (this.playable &&
-            this.y - this.deltaY >= canvas.height) {
-                playerAlive = false
-            }
-        if (!(playerAlive) && !(playerWin)) {
-            ctx.fillStyle = "red"
-            ctx.font = "150px sans serif"
-            ctx.fillText("Gameover!", 140, canvas.height/2 - 100, canvas.width - 20)
-
-            ctx.fillStyle = "lightgrey"
-            ctx.fillRect(canvas.width/2 - 150, 175, 300, 150)
-            ctx.fillStyle = "black"
-            ctx.lineWidth = 2.5
-            ctx.font = "100px sans serif"
-            ctx.strokeRect(canvas.width/2 - 150, 175, 300, 150)
-            ctx.fillText("Restart?", canvas.width/2 - 140, 280, 280)
-            if(candie){
-                playerdeath.play()
-                candie = false
-            }
-        }
-    }
-
-    win() {
-        if(this.playable) {
-            if(this.x >= 550 &&
-                this.y + this.height >= canvas.height - 10) {
-                    if (playerAlive) {
-                        playerWin = true
-                        
-                    }
-                }
-        }
-        if (playerWin) {
-            ctx.fillStyle = "yellow"
-            ctx.font = "150px sans serif"
-            ctx.fillText("Winner!", 140, canvas.height/2 - 100, canvas.width - 20)
-
-            ctx.fillStyle = "lightgrey"
-            ctx.fillRect(canvas.width/2 - 150, 175, 300, 150)
-            ctx.fillStyle = "black"
-            ctx.lineWidth = 2.5
-            ctx.font = "100px sans serif"
-            ctx.strokeRect(canvas.width/2 - 150, 175, 300, 150)
-            ctx.fillText("Restart?", canvas.width/2 - 140, 280, 280)
-        }
-    }
-
-    screenChange(objList) {
-        // Allows us to move between screens in the level
-        if(player.x + player.width/2 <= 0) {
-            for (let obj of objList) {
-                if(obj !== player){
-                    obj.x += canvas.width
-                }
-            }
-            player.x += canvas.width
-        }
-        if(player.x + player.width/2 >= canvas.width) {
-            for (let obj of objList) {
-                if(obj !== player){
-                    obj.x -= canvas.width
-                }
-            }
-            player.x -= canvas.width
-        }
-    }
-    
-}
-
-
 
 const keys = {}
 
