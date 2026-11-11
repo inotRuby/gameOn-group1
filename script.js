@@ -548,13 +548,3 @@ window.onload = () => {
     game.startGame()
 }
 
-/*
-Current issues existing in the code:
-
-When jumping and moving into the sides of the second upper block you get stuck on the sides
-Hitting sides of first lower block resets gravity
-You still get stuck in blocks if the block is to close to where the player starts jumping (jump under bottom block)
-When holding down jump any jump after the first is higher
-When jumping over the hole you can go through the floor if you land in it (will add picture in discord)
-When falling and moving so the top of player hits the bottom corner of a block you can move along it (very rarely happens)
-*/
