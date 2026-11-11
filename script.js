@@ -9,8 +9,9 @@ const basesword = new Audio('swordswing.mp3')
 let canland = false
 let candie = true
 let timeplayed = 0
+let playerWin = false
 backgroundtheme.loop = true
-
+let attackAllowed = false
 function jumpoverlap(){
     const jump = basejump.cloneNode()
     jump.play()
@@ -20,7 +21,7 @@ function landoverlap(){
     land.play()
 }
 function swordoverlap(){
-    const swing = baseland.cloneNode()
+    const swing = basesword.cloneNode()
     swing.play()
 }
 /*
@@ -104,13 +105,14 @@ class GameObjects {
 
 class MoveableObjects extends GameObjects {
 
-    constructor(x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight, activeimage = 0, direction = "right") {
+    constructor(x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight, activeimage = 0, direction = "right",canland= false) {
         super(x, y, width, height, imageSrc, color)
         this.speedX = speedX
         this.deltaY = deltaY
         this.jumpHeight = jumpHeight
         this.activeimage = activeimage
         this.direction = direction
+        this.canland = canland
     }
 
     movement(objList, obj){
@@ -137,43 +139,44 @@ class MoveableObjects extends GameObjects {
         if(this.activeimage>= 100){
             this.activeimage = 0
         }
-        console.log(timeplayed)
     }
 
     update() {
         //extra logic for any moving objects
         super.update()
     }
+    
     gravity(objList, obj) {
         // Checks if we are in the air and if we are make the player accelerate down
         this.deltaY += gravconst
 
         this.y += this.deltaY
-
+        console.log(this.canland)
+        console.log(timeplayed)
         for (let otherObj of objList) {
             
         if ((otherObj !== obj) && (!(otherObj instanceof Door))) {
+            if (this.deltaY > 0.4){ 
+                        this.canland = true
+                    }
             if ((this.collision(obj, otherObj))) {
-                    if (this.deltaY < 0) {
+                    if (this.deltaY < 0 && canland) {
                         this.deltaY = 0
                         landoverlap()
                         timeplayed += 1
                     }
-                    if (this.deltaY < 0.4 || this.deltaY > 0.4){
-                        canland = true
-                    }
-                    if (this.deltaY > 0) {
-                    else if (this.deltaY > 0 && 
+                    if (this.deltaY > 0 && 
                         (this.x > otherObj.x && this.x < otherObj.x + otherObj.width) ||
                         (this.x + this.width > otherObj.x && this.x + this.width < otherObj.x + otherObj.width)
-                    ) {
-                        this.y = otherObj.y - this.height
-                        this.deltaY = 0
-                        if(canland && (obj instanceof Player) || (obj instanceof Enemy) && canland){
-                            canland = false
-                            landoverlap()
-                            timeplayed += 1
+                        ) {
+                            this.y = otherObj.y - this.height
+                            this.deltaY = 0
                         }
+                    
+                    if((this.canland && (obj instanceof Player)) || ((obj instanceof Enemy) && this.canland)){
+                        this.canland = false
+                        landoverlap()
+                        timeplayed += 1
                     }
                 }
             }
@@ -222,24 +225,17 @@ class Player extends MoveableObjects {
     }
 
     update(objList, obj) {
-
-        if (this.attackCooldown >= 1) {
-            this.attackCooldown += 1
-        }
-        if (this.attackCooldown >= 180) {
-            console.log(this.attackCooldown)
-            this.attackCooldown = 0
-        }
-
+        // add attack function via update function
+        
         //extra logic for the player class
         this.changeimage()
         if (this.speedX > 0) this.direction = "right";
         if (this.speedX < 0) this.direction = "left";
-
+        
         this.movement(objList, obj)
         this.gravity(objList, obj)
-
-
+        
+        
         for (let otherObj of objList) {
             if (otherObj instanceof Enemy) {
                 if (this.collision(obj, otherObj) && otherObj.active) {
@@ -253,19 +249,31 @@ class Player extends MoveableObjects {
                 if (!(this.active)) {
                     this.death()
                 }
-
+                
             }
         }
-
+        if (this.attackCooldown >= 1) {
+            this.attackCooldown += 1
+        }
+        if (this.attackCooldown >= 180) {
+            this.attackCooldown = 0
+        }
+        if (attackAllowed) {
+            this.attacking(objList)
+        }
     }
 
     attacking(objList) {
+        //maked this function run via update instead of event listener
+        if (this.attackCooldown >= 21) {
+            attackAllowed = false
+        }
         ctx.fillStyle = "black"
-        this.attackCooldown = 21
+        this.attackCooldown += 1
         if (this.direction === "right") {
-            ctx.fillRect(this.x + this.width, this.y - 20, 100, this.height + 40)
-    
+            
             for (let otherObj of objList) {
+                ctx.fillRect(this.x + this.width, this.y - 20, 100, this.height + 40)
                 if (otherObj instanceof Enemy) {
                     if (otherObj.x + otherObj.width >= this.x + this.width &&
                         otherObj.x <= this.x + this.width + 100 &&
@@ -283,9 +291,10 @@ class Player extends MoveableObjects {
         }
 
         if (this.direction === "left") {
-            ctx.fillRect(this.x, this.y - 20, -100, this.height + 40)
-    
+            
             for (let otherObj of objList) {
+                ctx.fillRect(this.x, this.y - 20, -100, this.height + 40)
+                console.log("draw our hitbox")
                 if (otherObj instanceof Enemy) {
                     if (otherObj.x + otherObj.width <= this.x &&
                         otherObj.x >= this.x - 100 &&
@@ -398,7 +407,7 @@ class Player extends MoveableObjects {
 
 class Enemy extends MoveableObjects {
     constructor(hp, x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight,range) {
-        super(x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight)
+        super(x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight,canland)
         this.hp = hp
         this.range = range
         this.attackCooldown = 0
@@ -406,6 +415,34 @@ class Enemy extends MoveableObjects {
     }
 
     update(objList, obj) {
+
+        
+        if (this.active) {
+            
+            this.movement(objList, obj)
+            this.gravity(objList, obj)
+            if (this.speedX > 0) this.direction = "right";
+            if (this.speedX < 0) this.direction = "left";
+            
+            if (this.attackCooldown <= 20) {
+                this.attacking(objList)
+            }
+            if (this.attackCooldown >= 1) {
+                this.attackCooldown += 1
+            }
+            if (this.attackCooldown >= 180) {
+                this.attackCooldown = 0
+            }
+    
+            if (this.jumpCooldown >= 1) {
+                this.jumpCooldown += 1
+            }
+            if (this.jumpCooldown >= 120) {
+                this.jumpCooldown = 0
+            }
+        }
+    }
+
 
     movement(objList, obj) {
         for(let otherObj of objList) {
@@ -432,57 +469,6 @@ class Enemy extends MoveableObjects {
             }
         }
     }
-}
-
-class Block extends StaticObjects {
-    constructor(x, y, width, height, imageSrc, color) {
-        super(x, y, width, height, imageSrc, color)
-    }
-}
-class Door extends StaticObjects {
-    constructor(x,y,width,height,imageSrc,color,xcoord){
-        super(x,y,width,height,imageSrc,color)
-        this.xcoord = xcoord
-    }
-    update(objList){
-        for(let otherObj of objList){
-            if (otherObj instanceof Player || otherObj instanceof Enemy){
-                if((otherObj.x + otherObj.width> this.x && otherObj.x < this.x+this.width) && (otherObj.y +otherObj.height>this.y && otherObj.y < this.y + this.height)){
-                    otherObj.x += this.xcoord
-                }
-            }
-        }
-    }
-}
-const keys = {}
-        
-        if (this.active) {
-            
-            this.movement(objList, obj)
-            this.gravity(objList, obj)
-            if (this.speedX > 0) this.direction = "right";
-            if (this.speedX < 0) this.direction = "left";
-            
-            if (this.attackCooldown <= 20) {
-                this.attacking(objList)
-            }
-            if (this.attackCooldown >= 1) {
-                this.attackCooldown += 1
-            }
-            if (this.attackCooldown >= 180) {
-                console.log(this.attackCooldown)
-                this.attackCooldown = 0
-            }
-    
-            if (this.jumpCooldown >= 1) {
-                this.jumpCooldown += 1
-            }
-            if (this.jumpCooldown >= 120) {
-                console.log(this.jumpCooldown)
-                this.jumpCooldown = 0
-            }
-        }
-    }
 
     attacking(objList) {
         ctx.fillStyle = "black"
@@ -499,6 +485,7 @@ const keys = {}
                         otherObj.y + otherObj.height <= this.y + this.height + 20) {
                             this.attackCooldown = 21
                             otherObj.hp -= 1
+                            swordoverlap()
                             console.log(`player hp: ${otherObj.hp}`)
                             if (otherObj.hp <= 0) {
                                 otherObj.active = false
@@ -528,12 +515,26 @@ const keys = {}
             }
         }
     }
-
 }
 
 class Block extends StaticObjects {
     constructor(x, y, width, height, imageSrc, color) {
         super(x, y, width, height, imageSrc, color)
+    }
+}
+class Door extends StaticObjects {
+    constructor(x,y,width,height,imageSrc,color,xcoord){
+        super(x,y,width,height,imageSrc,color)
+        this.xcoord = xcoord
+    }
+    update(objList){
+        for(let otherObj of objList){
+            if (otherObj instanceof Player || otherObj instanceof Enemy){
+                if((otherObj.x + otherObj.width> this.x && otherObj.x < this.x+this.width) && (otherObj.y +otherObj.height>this.y && otherObj.y < this.y + this.height)){
+                    otherObj.x += this.xcoord
+                }
+            }
+        }
     }
 }
 
@@ -569,8 +570,8 @@ class GameEngine {
         this.objectList.push(this.wall2)
         this.objectList.push(this.floor)
         this.objectList.push(this.floor2)
-        this.objectList.push(this.door)
         this.objectList.push(this.roof)
+        //this.objectList.push(this.door)
         this.initInput()
     }
 
@@ -585,16 +586,13 @@ class GameEngine {
 
         window.addEventListener("mousedown", (e) => {
             if (this.player.attackCooldown <= 20) {
-                console.log("you attacked")
-                this.player.attacking(this.objectList)
+                attackAllowed = true
             }
         })
 
         window.addEventListener("keydown", (e) => {
-            console.log(this.player.attackCooldown)
             if (e.key == "e" && this.player.attackCooldown <= 20) {  
-                console.log("you attacked")
-                this.player.attacking(this.objectList)
+                attackAllowed = true
             }
         })
     }
@@ -607,14 +605,14 @@ class GameEngine {
 
         // The gameloop function which makes everything else run
         ctx.clearRect(0, 0, canvas.width, canvas.height)
-
+        
         this.player.handleMoving(this.keyList, this.objectList)
-
+        
         for (let obj of this.objectList) {
             obj.update(this.objectList, obj)
             obj.drawBox(this.ctx)
         }
-
+        
         requestAnimationFrame(() => this.gameloop());
     }
 
@@ -624,14 +622,3 @@ window.onload = () => {
     const game = new GameEngine("gameCanvas")
     game.startGame()
 }
-
-/*
-Current issues existing in the code:
-
-When jumping and moving into the sides of the second upper block you get stuck on the sides
-Hitting sides of first lower block resets gravity
-You still get stuck in blocks if the block is to close to where the player starts jumping (jump under bottom block)
-When holding down jump any jump after the first is higher
-When jumping over the hole you can go through the floor if you land in it (will add picture in discord)
-When falling and moving so the top of player hits the bottom corner of a block you can move along it (very rarely happens)
-*/
