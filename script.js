@@ -9,6 +9,7 @@ const basesword = new Audio('swordswing.mp3')
 let canland = false
 let candie = true
 let timeplayed = 0
+let playerWin = false
 backgroundtheme.loop = true
 let attackAllowed = false
 
@@ -21,7 +22,7 @@ function landoverlap(){
     land.play()
 }
 function swordoverlap(){
-    const swing = baseland.cloneNode()
+    const swing = basesword.cloneNode()
     swing.play()
 }
 /*
@@ -105,13 +106,14 @@ class GameObjects {
 
 class MoveableObjects extends GameObjects {
 
-    constructor(x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight, activeimage = 0, direction = "right") {
+    constructor(x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight, activeimage = 0, direction = "right",canland= false) {
         super(x, y, width, height, imageSrc, color)
         this.speedX = speedX
         this.deltaY = deltaY
         this.jumpHeight = jumpHeight
         this.activeimage = activeimage
         this.direction = direction
+        this.canland = canland
     }
 
     movement(objList, obj){
@@ -150,28 +152,30 @@ class MoveableObjects extends GameObjects {
         this.deltaY += gravconst
 
         this.y += this.deltaY
-
+        console.log(this.canland)
+        console.log(timeplayed)
         for (let otherObj of objList) {
             
         if ((otherObj !== obj) && (!(otherObj instanceof Door))) {
+            if (this.deltaY > 0.4){ 
+                        this.canland = true
+                    }
             if ((this.collision(obj, otherObj))) {
-                    if (this.deltaY < 0) {
+                    if (this.deltaY < 0 && canland) {
                         this.deltaY = 0
                         landoverlap()
                         timeplayed += 1
                     }
-                    else if (this.deltaY > 0 && 
+                    if (this.deltaY > 0 && 
                         (this.x > otherObj.x && this.x < otherObj.x + otherObj.width) ||
                         (this.x + this.width > otherObj.x && this.x + this.width < otherObj.x + otherObj.width)
                         ) {
                             this.y = otherObj.y - this.height
                             this.deltaY = 0
                         }
-                    if (this.deltaY < 0.4 || this.deltaY > 0.4){
-                        canland = true
-                    }
-                    if(canland && (obj instanceof Player) || (obj instanceof Enemy) && canland){
-                        canland = false
+                    
+                    if((this.canland && (obj instanceof Player)) || ((obj instanceof Enemy) && this.canland)){
+                        this.canland = false
                         landoverlap()
                         timeplayed += 1
                     }
@@ -257,13 +261,18 @@ class Player extends MoveableObjects {
         }
         if (attackAllowed) {
             this.attacking(objList)
+            
         }
     }
 
     attacking(objList) {
+        
         //maked this function run via update instead of event listener
         if (this.attackCooldown >= 21) {
             attackAllowed = false
+        }
+        if (this.attackCooldown == 2){
+            swordoverlap()
         }
         ctx.fillStyle = "black"
         this.attackCooldown += 1
@@ -278,6 +287,7 @@ class Player extends MoveableObjects {
                         otherObj.y + otherObj.height <= this.y + this.height + 20) {
                             this.attackCooldown = 21
                             otherObj.hp -= 1
+                            swordoverlap()
                             console.log(`enemy hp: ${otherObj.hp}`)
                             if (otherObj.hp <= 0) {
                                 otherObj.active = false
@@ -404,7 +414,7 @@ class Player extends MoveableObjects {
 
 class Enemy extends MoveableObjects {
     constructor(hp, x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight,range) {
-        super(x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight)
+        super(x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight,canland)
         this.hp = hp
         this.range = range
         this.attackCooldown = 0
@@ -423,6 +433,7 @@ class Enemy extends MoveableObjects {
             
             if (this.attackCooldown <= 20) {
                 this.attacking(objList)
+                swordoverlap()
             }
             if (this.attackCooldown >= 1) {
                 this.attackCooldown += 1
@@ -603,6 +614,7 @@ class GameEngine {
         this.objectList.push(this.wall)
         this.objectList.push(this.wall2)
         this.objectList.push(this.roof)
+        //this.objectList.push(this.door)
         this.initInput()
     }
 
@@ -653,4 +665,3 @@ window.onload = () => {
     const game = new GameEngine("gameCanvas")
     game.startGame()
 }
-
