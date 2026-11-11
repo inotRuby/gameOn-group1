@@ -558,7 +558,7 @@ class GameEngine {
         this.block4 = new Block(300, 195, 450, 100, "", "purple")
         this.block5 = new Block(200, 295, 175, 100, "", "purple")
         this.block6 = new Block(0, 195, 125, 100, "", "purple")
-        this.block7 = new Block(100, 0, 250, 100, "", "purple")
+        this.block7 = new Block(250, 0, 250, 100, "", "purple")
         this.block8 = new Block(700, 0, 300, 100, "", "purple")
 
 
