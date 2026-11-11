@@ -122,20 +122,17 @@ class MoveableObjects extends GameObjects {
     }
     changeimage(){
         
-        if (this.activeimage<20){
-            this.image.src = "stone wall.jpg"
+        if (this.activeimage<25){
+            this.image.src = "player3.png"
         }
-        if (this.activeimage<40 && this.activeimage > 20){
-            this.image.src = "runskel.jpg"
+        if (this.activeimage<50 && this.activeimage > 25){
+            this.image.src = "player1.png"
         }
-        if (this.activeimage<60 && this.activeimage > 40){
-            this.image.src = "stone wall.jpg"
+        if (this.activeimage<75 && this.activeimage > 50){
+            this.image.src = "player2.png"
         }
-        if (this.activeimage<80 && this.activeimage > 60){
-            this.image.src = "runskel.jpg"
-        }
-        if (this.activeimage<100 && this.activeimage > 80){
-            this.image.src = "stone wall.jpg"
+        if (this.activeimage<100 && this.activeimage > 75){
+            this.image.src = "player4.png"
         }
         if(this.activeimage>= 100){
             this.activeimage = 0
@@ -220,7 +217,7 @@ class StaticObjects extends GameObjects {
 class Player extends MoveableObjects {
 
     constructor(x, y, hp, speedX) {
-        super(x, y, 20, 50, "stone wall.jpg", "pink", speedX, 0, 12,0)
+        super(x, y, 20, 50, "player.png", "pink", speedX, 0, 10,0)
         this.hp = hp
         this.attackCooldown = 0
     }
@@ -563,14 +560,14 @@ class GameEngine {
         this.enemy = new Enemy(3, 325, 145, 25, 50, "", "red", 0, 0, 10,270)
 
         //blocks for the level
-        this.block = new Block(150, 395, 325, 100, "", "purple")
-        this.block2 = new Block(750, 395, 250, 100, "", "purple")
-        this.block3 = new Block(850, 295, 150, 100, "", "purple")
-        this.block4 = new Block(300, 195, 450, 100, "", "purple")
-        this.block5 = new Block(200, 295, 175, 100, "", "purple")
-        this.block6 = new Block(0, 195, 125, 100, "", "purple")
-        this.block7 = new Block(250, 0, 250, 100, "", "purple")
-        this.block8 = new Block(700, 0, 300, 100, "", "purple")
+        this.block = new Block(150, 395, 325, 100, "platform1.png", "purple")
+        this.block2 = new Block(750, 395, 250, 100, "platform2.png", "purple")
+        this.block3 = new Block(850, 295, 150, 100, "platform3.png", "purple")
+        this.block4 = new Block(300, 195, 450, 100, "platform1.png", "purple")
+        this.block5 = new Block(200, 295, 175, 100, "platform2.png", "purple")
+        this.block6 = new Block(0, 195, 125, 100, "platform3.png", "purple")
+        this.block7 = new Block(250, 0, 250, 100, "platform1.png", "purple")
+        this.block8 = new Block(700, 0, 300, 100, "platform2.png", "purple")
 
 
         
