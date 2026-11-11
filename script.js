@@ -545,29 +545,64 @@ class GameEngine {
         this.keyList = {}
         this.objectList = []
 
-        this.player = new Player(50, 300, 3, 0)
+        //player
+        this.player = new Player(50, 450, 3, 0)
+
+        //enemies
         this.enemy = new Enemy(3, 325, 145, 25, 50, "", "red", 0, 0, 10,270)
-        this.block = new Block(100, 400, 200, 20, "", "grey")
-        this.block2 = new Block(400, 300, 200, 20, "", "grey")
-        this.block3 = new Block(700, 200, 200, 20, "", "grey")
-        this.wall = new Block(990,0, 20,canvas.height, "", "grey")
-        this.wall2 = new Block(-10,0, 20,canvas.height, "", "grey")
-        this.floor = new Block(canvas.width * -1, canvas.height - 5, canvas.width + 400, 5, "", "green")
-        this.floor2 = new Block(550, canvas.height - 5, canvas.width * 2, 5, "", "blue")
-        this.roof = new Block(0,0,3 * canvas.width,10,"","grey")
+
+        //blocks for the level
+        this.block = new Block(150, 395, 325, 100, "", "purple")
+        this.block2 = new Block(750, 395, 250, 100, "", "purple")
+        this.block3 = new Block(850, 295, 150, 100, "", "purple")
+        this.block4 = new Block(300, 195, 450, 100, "", "purple")
+        this.block5 = new Block(200, 295, 175, 100, "", "purple")
+        this.block6 = new Block(0, 195, 125, 100, "", "purple")
+        this.block7 = new Block(100, 0, 250, 100, "", "purple")
+        this.block8 = new Block(700, 0, 300, 100, "", "purple")
+
+
+        
+        //floor for the level
+        this.floor = new Block(0, canvas.height - 5, 550, 5, "", "green")
+        this.floor2 = new Block(650, canvas.height - 5, 350, 5, "", "blue")
+
+        //door to end the level
         this.door = new Door(100,400,20,60,"","grey",700)
 
+        //walls and roof
+        this.wall = new Block(1000, 0, 20, canvas.height, "", "grey")
+        this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey")
+        this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey")
+
+
+        //player
         this.objectList.push(this.player)
-        this.objectList.push(this.enemy)
+        
+        //enemies
+        //this.objectList.push(this.enemy)
+
+        //blocks for the level
         this.objectList.push(this.block)
         this.objectList.push(this.block2)
         this.objectList.push(this.block3)
-        this.objectList.push(this.wall)
-        this.objectList.push(this.wall2)
+        this.objectList.push(this.block4)
+        this.objectList.push(this.block5)
+        this.objectList.push(this.block6)
+        this.objectList.push(this.block7)
+        this.objectList.push(this.block8)
+
+        //floor for the level
         this.objectList.push(this.floor)
         this.objectList.push(this.floor2)
-        this.objectList.push(this.roof)
+        
+        //door to end the level
         //this.objectList.push(this.door)
+        
+        //walls and roof
+        this.objectList.push(this.wall)
+        this.objectList.push(this.wall2)
+        this.objectList.push(this.roof)
         this.initInput()
     }
 
