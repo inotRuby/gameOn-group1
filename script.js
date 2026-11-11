@@ -10,6 +10,7 @@ let canland = false
 let candie = true
 let timeplayed = 0
 backgroundtheme.loop = true
+let attackAllowed = false
 
 function jumpoverlap(){
     const jump = basejump.cloneNode()
@@ -222,24 +223,17 @@ class Player extends MoveableObjects {
     }
 
     update(objList, obj) {
-
-        if (this.attackCooldown >= 1) {
-            this.attackCooldown += 1
-        }
-        if (this.attackCooldown >= 180) {
-            console.log(this.attackCooldown)
-            this.attackCooldown = 0
-        }
-
+        // add attack function via update function
+        
         //extra logic for the player class
         this.changeimage()
         if (this.speedX > 0) this.direction = "right";
         if (this.speedX < 0) this.direction = "left";
-
+        
         this.movement(objList, obj)
         this.gravity(objList, obj)
-
-
+        
+        
         for (let otherObj of objList) {
             if (otherObj instanceof Enemy) {
                 if (this.collision(obj, otherObj) && otherObj.active) {
@@ -253,19 +247,31 @@ class Player extends MoveableObjects {
                 if (!(this.active)) {
                     this.death()
                 }
-
+                
             }
         }
-
+        if (this.attackCooldown >= 1) {
+            this.attackCooldown += 1
+        }
+        if (this.attackCooldown >= 180) {
+            this.attackCooldown = 0
+        }
+        if (attackAllowed) {
+            this.attacking(objList)
+        }
     }
 
     attacking(objList) {
+        //maked this function run via update instead of event listener
+        if (this.attackCooldown >= 21) {
+            attackAllowed = false
+        }
         ctx.fillStyle = "black"
-        this.attackCooldown = 21
+        this.attackCooldown += 1
         if (this.direction === "right") {
-            ctx.fillRect(this.x + this.width, this.y - 20, 100, this.height + 40)
-    
+            
             for (let otherObj of objList) {
+                ctx.fillRect(this.x + this.width, this.y - 20, 100, this.height + 40)
                 if (otherObj instanceof Enemy) {
                     if (otherObj.x + otherObj.width >= this.x + this.width &&
                         otherObj.x <= this.x + this.width + 100 &&
@@ -283,9 +289,10 @@ class Player extends MoveableObjects {
         }
 
         if (this.direction === "left") {
-            ctx.fillRect(this.x, this.y - 20, -100, this.height + 40)
-    
+            
             for (let otherObj of objList) {
+                ctx.fillRect(this.x, this.y - 20, -100, this.height + 40)
+                console.log("draw our hitbox")
                 if (otherObj instanceof Enemy) {
                     if (otherObj.x + otherObj.width <= this.x &&
                         otherObj.x >= this.x - 100 &&
@@ -470,7 +477,6 @@ const keys = {}
                 this.attackCooldown += 1
             }
             if (this.attackCooldown >= 180) {
-                console.log(this.attackCooldown)
                 this.attackCooldown = 0
             }
     
@@ -478,7 +484,6 @@ const keys = {}
                 this.jumpCooldown += 1
             }
             if (this.jumpCooldown >= 120) {
-                console.log(this.jumpCooldown)
                 this.jumpCooldown = 0
             }
         }
@@ -585,16 +590,13 @@ class GameEngine {
 
         window.addEventListener("mousedown", (e) => {
             if (this.player.attackCooldown <= 20) {
-                console.log("you attacked")
-                this.player.attacking(this.objectList)
+                attackAllowed = true
             }
         })
 
         window.addEventListener("keydown", (e) => {
-            console.log(this.player.attackCooldown)
             if (e.key == "e" && this.player.attackCooldown <= 20) {  
-                console.log("you attacked")
-                this.player.attacking(this.objectList)
+                attackAllowed = true
             }
         })
     }
@@ -607,14 +609,14 @@ class GameEngine {
 
         // The gameloop function which makes everything else run
         ctx.clearRect(0, 0, canvas.width, canvas.height)
-
+        
         this.player.handleMoving(this.keyList, this.objectList)
-
+        
         for (let obj of this.objectList) {
             obj.update(this.objectList, obj)
             obj.drawBox(this.ctx)
         }
-
+        
         requestAnimationFrame(() => this.gameloop());
     }
 
