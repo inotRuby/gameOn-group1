@@ -260,13 +260,18 @@ class Player extends MoveableObjects {
         }
         if (attackAllowed) {
             this.attacking(objList)
+            
         }
     }
 
     attacking(objList) {
+        
         //maked this function run via update instead of event listener
         if (this.attackCooldown >= 21) {
             attackAllowed = false
+        }
+        if (this.attackCooldown == 2){
+            swordoverlap()
         }
         ctx.fillStyle = "black"
         this.attackCooldown += 1
@@ -281,6 +286,7 @@ class Player extends MoveableObjects {
                         otherObj.y + otherObj.height <= this.y + this.height + 20) {
                             this.attackCooldown = 21
                             otherObj.hp -= 1
+                            swordoverlap()
                             console.log(`enemy hp: ${otherObj.hp}`)
                             if (otherObj.hp <= 0) {
                                 otherObj.active = false
@@ -291,7 +297,6 @@ class Player extends MoveableObjects {
         }
 
         if (this.direction === "left") {
-            
             for (let otherObj of objList) {
                 ctx.fillRect(this.x, this.y - 20, -100, this.height + 40)
                 console.log("draw our hitbox")
@@ -426,6 +431,7 @@ class Enemy extends MoveableObjects {
             
             if (this.attackCooldown <= 20) {
                 this.attacking(objList)
+                swordoverlap()
             }
             if (this.attackCooldown >= 1) {
                 this.attackCooldown += 1
@@ -485,7 +491,6 @@ class Enemy extends MoveableObjects {
                         otherObj.y + otherObj.height <= this.y + this.height + 20) {
                             this.attackCooldown = 21
                             otherObj.hp -= 1
-                            swordoverlap()
                             console.log(`player hp: ${otherObj.hp}`)
                             if (otherObj.hp <= 0) {
                                 otherObj.active = false
