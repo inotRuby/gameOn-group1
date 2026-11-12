@@ -243,10 +243,10 @@ class Player extends MoveableObjects {
                         this.death()
                     }
                 }
-                if (!(this.active)) {
-                    this.death()
-                }
                 
+            }
+            if (this.y > canvas.height) {
+                this.death()
             }
         }
         if (this.attackCooldown >= 1) {
@@ -360,6 +360,10 @@ class Player extends MoveableObjects {
 
     death() {
         // Check if player died by any means added in future and draw gameover! + restart button
+        if (candie) {
+            playerdeath.play();
+            candie = false;
+        }
         ctx.fillStyle = "red"
         ctx.font = "150px sans serif"
         ctx.fillText("Gameover!", 10, canvas.height/2 - 75, canvas.width - 20)
@@ -526,6 +530,14 @@ class Enemy extends MoveableObjects {
     }
 }
 
+class Boss extends Enemy {
+    constructor(hp, attackCooldown) {
+        super(x, y, 50, 100, imageSrc, color, speedX, deltaY, jumpHeight,canland)
+        this.hp = hp
+        this.attackCooldown = attackCooldown
+    }
+}
+
 class Block extends StaticObjects {
     constructor(x, y, width, height, imageSrc, color) {
         super(x, y, width, height, imageSrc, color)
@@ -542,7 +554,7 @@ class Door extends StaticObjects {
             if (otherObj instanceof Player || otherObj instanceof Enemy){
                 if((otherObj.x + otherObj.width> this.x && otherObj.x < this.x+this.width) && (otherObj.y +otherObj.height>this.y && otherObj.y < this.y + this.height)){
                     ge.clear();
-                    ge.setLevel(4);
+                    ge.setLevel(5);
                     //otherObj.x += this.xcoord
                 }
             }
@@ -736,13 +748,52 @@ class GameEngine {
             this.player.x = 50;
             this.player.y = 245;
 
-            this.block = new Block(0, 295, 100, 100, "platform1.png", "grey");
-            this.block2 = new Block(200, 295, 100, 100, "platform1.png", "grey");
-            this.block3 = new Block(400, 295, 100, 100, "platform1.png", "grey");
-            this.block4 = new Block(600, 295, 100, 100, "platform1.png", "grey");
-            this.block5 = new Block(800, 295, 100, 100, "platform1.png", "grey");
+            this.block = new Block(0, 295, 125, 100, "platform1.png", "grey");
+            this.block2 = new Block(225, 295, 125, 100, "platform1.png", "grey");
+            this.block3 = new Block(450, 295, 125, 100, "platform1.png", "grey");
+            this.block4 = new Block(675, 295, 125, 100, "platform1.png", "grey");
+            this.block5 = new Block(875, 295, 125, 100, "platform1.png", "grey");
 
-            this.floor = new Block(0, canvas.height - 5, canvas.width, 5, "", "green");
+            this.enemy = new Enemy(3, 275, 245, 25, 50, "", "red", 1, 0, 10, 225, 325);
+            this.enemy2 = new Enemy(3, 500, 245, 25, 50, "", "red", 1, 0, 10, 450, 550);
+            this.enemy3 = new Enemy(3, 725, 245, 25, 50, "", "red", 1, 0, 10, 675, 775);
+
+            this.wall = new Block(1000, 0, 20, canvas.height, "", "grey");
+            this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
+            this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey");
+
+            this.door = new Door(925, 200, 50, 95, "", "grey", 700);
+
+            this.objectList.push(this.block);
+            this.objectList.push(this.block2);
+            this.objectList.push(this.block3);
+            this.objectList.push(this.block4);
+            this.objectList.push(this.block5);
+
+            this.objectList.push(this.enemy);
+            this.objectList.push(this.enemy2);
+            this.objectList.push(this.enemy3);
+
+            this.objectList.push(this.door);
+
+            this.objectList.push(this.wall);
+            this.objectList.push(this.wall2);
+            this.objectList.push(this.roof);
+
+            this.objectList.push(this.player);
+        }
+
+        if(level == 5) {
+            this.player.hp = 3;
+            this.player.x = 50;
+            this.player.y = 45;
+
+            this.block = new Block(0, 95, 150, 100, "platform1.png", "grey");
+            this.block2 = new Block(0, 395, 1000, 100, "platform1.png", "grey");
+            this.block3 = new Block(100, 295, 250, 25, "platform1.png", "grey");
+            this.block4 = new Block(400, 195, 250, 25, "platform1.png", "grey");
+            this.block5 = new Block(700, 295, 250, 25, "platform1.png", "grey");
+
             this.wall = new Block(1000, 0, 20, canvas.height, "", "grey");
             this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
             this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey");
@@ -753,10 +804,10 @@ class GameEngine {
             this.objectList.push(this.block4);
             this.objectList.push(this.block5);
 
-            this.objectList.push(this.floor);
             this.objectList.push(this.wall);
             this.objectList.push(this.wall2);
             this.objectList.push(this.roof);
+
             this.objectList.push(this.player);
         }
     }
