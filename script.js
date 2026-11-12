@@ -240,7 +240,7 @@ class Player extends MoveableObjects {
             if (otherObj instanceof Enemy) {
                 if (this.collision(this, otherObj) && otherObj.active ) {
                     if (this.hp > 0) {
-                        this.death()
+                        this.death(ge)
                     }
 
 
@@ -248,7 +248,7 @@ class Player extends MoveableObjects {
                 
             }
             if (this.y > canvas.height || dead) {
-                this.death()
+                this.death(ge)
             }
         }
         if (this.attackCooldown >= 1) {
@@ -384,7 +384,11 @@ class Player extends MoveableObjects {
                 e.offsetX <= canvas.width/2 + 150 &&
                 e.offsetY >= 175 &&
                 e.offsetY <= 175 + 150) {
-                    location.reload()
+                    dead = false;
+                    this.active = true;
+                    this.x = 50;
+                    this.y = 445;
+                    ge.setLevel(1)
                 }
         })
     }
@@ -507,7 +511,7 @@ class Enemy extends MoveableObjects {
                         otherObj.y + otherObj.height >= this.y - 20 &&
                         otherObj.y + otherObj.height <= this.y + this.height + 20) {
                             this.attackCooldown = 200
-                            otherObj.hp -= 1
+                            dead = true;
 
                             if (otherObj.hp <= 0) {
                                 otherObj.active = false
@@ -527,7 +531,7 @@ class Enemy extends MoveableObjects {
                         otherObj.y + otherObj.height >= this.y - 20 &&
                         otherObj.y + otherObj.height <= this.y + this.height + 20) {
                             this.attackCooldown = 200
-                            otherObj.hp -= 1
+                            dead = true;
 
                             if (otherObj.hp <= 0) {
                                 otherObj.active = false
@@ -648,6 +652,8 @@ class GameEngine {
 
     setLevel(level) {
         if (level == 1) {
+            this.player.x = 50;
+            this.player.y = 440;
             //enemies
             this.enemy = new Enemy(3, 325, 145, 50, 50, "fiende.png", "red", 1, 0, 10,300, 725)
 
@@ -876,7 +882,9 @@ class GameEngine {
             obj.update(this)
             obj.drawBox(this.ctx)
         }
-        
+        if (dead) {
+            this.player.death()
+        }
         requestAnimationFrame(() => this.gameloop());
     }
 
