@@ -670,8 +670,8 @@ class GameEngine {
 
             
             //floor for the level
-            this.floor = new Block(0, canvas.height - 5, 550, 5, "", "green")
-            this.floor2 = new Block(650, canvas.height - 5, 350, 5, "", "blue")
+            this.floor = new Block(0, canvas.height - 5, 550, 5, "", "#7a6842")
+            this.floor2 = new Block(650, canvas.height - 5, 350, 5, "", "#7a6842")
 
             //door to end the level
             this.door = new Door(900,200,100,100,"dooreffects-doorefect.png","grey",2)
@@ -715,7 +715,7 @@ class GameEngine {
             this.player.x = 50;
             this.player.y = 445;
             
-            this.floor = new Block(0, canvas.height - 5, canvas.width, 5, "", "green");
+            this.floor = new Block(0, canvas.height - 5, canvas.width, 5, "", "#7a6842");
             this.wall = new Block(1000, 0, 20, canvas.height, "", "grey");
             this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
             this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey");
@@ -767,7 +767,7 @@ class GameEngine {
             this.enemy2 = new Enemy(3, 345, 245, 50, 50, "fiende.png", "red", 1, 0, 10, 0, 825);
             this.enemy3 = new Enemy(3, 370, 445, 50, 50, "fiende.png", "red", 1, 0, 10, 105, 975);
             
-            this.floor = new Block(0, canvas.height - 5, canvas.width, 5, "", "green");
+            this.floor = new Block(0, canvas.height - 5, canvas.width, 5, "", "#7a6842");
             this.wall = new Block(1000, 0, 20, canvas.height, "", "grey");
             this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
             this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey");
