@@ -14,6 +14,8 @@ let playerWin = false
 backgroundtheme.loop = true
 let attackAllowed = false
 
+let dead = false;
+
 function jumpoverlap(){
     const jump = basejump.cloneNode()
     jump.play()
@@ -26,13 +28,13 @@ function swordoverlap(){
     const swing = basesword.cloneNode()
     swing.play()
 }
-/*
+
 document.addEventListener('keydown', (e) => {
     if(e.code){
         backgroundtheme.play();
     }
 })
-*/
+
 
 // The gravity value
 let gravconst = 0.4
@@ -236,17 +238,16 @@ class Player extends MoveableObjects {
         
         for (let otherObj of objList) {
             if (otherObj instanceof Enemy) {
-                if (this.collision(this, otherObj) && otherObj.active) {
+                if (this.collision(this, otherObj) && otherObj.active ) {
                     if (this.hp > 0) {
-                        this.hp -= 1 
-                    }
-                    else {
                         this.death()
                     }
+
+
                 }
                 
             }
-            if (this.y > canvas.height) {
+            if (this.y > canvas.height || dead) {
                 this.death()
             }
         }
@@ -361,6 +362,7 @@ class Player extends MoveableObjects {
 
     death() {
         // Check if player died by any means added in future and draw gameover! + restart button
+        dead = true;
         if (candie) {
             playerdeath.play();
             candie = false;
@@ -414,7 +416,7 @@ class Player extends MoveableObjects {
 }
 
 class Enemy extends MoveableObjects {
-    constructor(hp, x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight, leftRange, rightRange, attackCooldown=0, direction="right") {
+    constructor(hp, x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight, leftRange, rightRange, attackCooldown=0, direction="right", activeimage = 0) {
         super(x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight,canland)
         this.hp = hp
         this.leftRange = leftRange
@@ -422,6 +424,7 @@ class Enemy extends MoveableObjects {
         this.attackCooldown = attackCooldown
         this.direction = direction;
         this.jumpCooldown = 0
+        this.activeimage = activeimage
     }
 
     update(ge) {
@@ -430,6 +433,8 @@ class Enemy extends MoveableObjects {
         if (this.active) {
             
             this.movement(objList)
+            this.changeimage()
+            this.activeimage += 1
             if (this.speedX > 0) this.direction = "right";
             if (this.speedX < 0) this.direction = "left";
             
@@ -444,6 +449,18 @@ class Enemy extends MoveableObjects {
         }
     }
 
+    changeimage(){
+        
+        if (this.activeimage<25){
+            this.image.src = "fiende.png"
+        }
+        if (this.activeimage > 25){
+            this.image.src = "fiende1.png"
+        }
+        if (this.activeimage >= 50) {
+            this.activeimage = 0;
+        }
+    }
 
     movement(objList) {
 
@@ -527,7 +544,7 @@ class Enemy extends MoveableObjects {
 
 class Boss extends Enemy {
     constructor(x, y, hp, attackCooldown, cooldown) {
-        super(hp, x, y, 50, 100, "", "red", 1, 0, 0, false, 0, 0, 100, "right");
+        super(hp, x, y, 200, 180, "davidattackevil.png", "red", 1, 0, 0, false, 0, 0, 100, "right");
 
         this.attackCooldown = attackCooldown;
         this.cooldown = cooldown;
@@ -537,9 +554,11 @@ class Boss extends Enemy {
         for (let otherObj of ge.objectList) {
             if ((otherObj instanceof Player) && otherObj.x + otherObj.width/2 < this.x + this.width/2) {
                 this.direction = "left";
+                this.imageSrc = "davidattackmirror.png";
             }
             if ((otherObj instanceof Player) && otherObj.x + otherObj.width/2 > this.x + this.width/2) {
                 this.direction = "right";
+                this.imageSrc = "davidattackevil.png";
             }
         }
         if (this.attackCooldown <= 0) {
@@ -551,7 +570,7 @@ class Boss extends Enemy {
 
     attack(ge) {
         const objList = ge.objectList;
-        const shockwave = new Enemy(30, this.x + this.width/2, 230, 50, 165, "", "purple", 2, 0, 0, -5000000000, 1500000000, 999999967, this.direction);
+        const shockwave = new Enemy(30, this.x + this.width/2, 230, 50, 165, "handdav-magik.png", "purple", 2, 0, 0, -5000000000, 1500000000, 999999967, this.direction);
         if (this.direction == "right") {
             shockwave.speedX = 2
         }
@@ -569,9 +588,9 @@ class Block extends StaticObjects {
     }
 }
 class Door extends StaticObjects {
-    constructor(x,y,width,height,imageSrc,color,xcoord){
+    constructor(x,y,width,height,imageSrc,color,level){
         super(x,y,width,height,imageSrc,color)
-        this.xcoord = xcoord
+        this.level = level;
     }
     update(ge){
         const objList = ge.objectList;
@@ -579,7 +598,7 @@ class Door extends StaticObjects {
             if (otherObj instanceof Player || otherObj instanceof Enemy){
                 if((otherObj.x + otherObj.width> this.x && otherObj.x < this.x+this.width) && (otherObj.y +otherObj.height>this.y && otherObj.y < this.y + this.height)){
                     ge.clear();
-                    ge.setLevel(5);
+                    ge.setLevel(this.level);
                     //otherObj.x += this.xcoord
                 }
             }
@@ -599,7 +618,7 @@ class GameEngine {
         this.objectList = []
 
         //player
-        this.player = new Player(50, 450, 3, 0)
+        this.player = new Player(50, 450, 1, 0)
 
         this.setLevel(1);
         this.initInput()
@@ -630,73 +649,73 @@ class GameEngine {
     setLevel(level) {
         if (level == 1) {
             //enemies
-        this.enemy = new Enemy(3, 325, 145, 25, 50, "", "red", 1, 0, 10,300, 725)
+            this.enemy = new Enemy(3, 325, 145, 50, 50, "fiende.png", "red", 1, 0, 10,300, 725)
 
-        //blocks for the level
-        this.block = new Block(150, 395, 325, 100, "platform1.png", "purple")
-        this.block2 = new Block(750, 395, 250, 100, "platform2.png", "purple")
-        this.block3 = new Block(850, 295, 150, 100, "platform3.png", "purple")
-        this.block4 = new Block(300, 195, 450, 100, "platform1.png", "purple")
-        this.block5 = new Block(200, 295, 175, 100, "platform2.png", "purple")
-        this.block6 = new Block(0, 195, 125, 100, "platform3.png", "purple")
-        this.block7 = new Block(250, 0, 250, 100, "platform1.png", "purple")
-        this.block8 = new Block(700, 0, 300, 100, "platform2.png", "purple")
-
-
-        
-        //floor for the level
-        this.floor = new Block(0, canvas.height - 5, 550, 5, "", "green")
-        this.floor2 = new Block(650, canvas.height - 5, 350, 5, "", "blue")
-
-        //door to end the level
-        this.door = new Door(100,400,20,60,"","grey",700)
-
-        //walls and roof
-        this.wall = new Block(1000, 0, 20, canvas.height, "", "grey")
-        this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey")
-        this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey")
+            //blocks for the level
+            this.block = new Block(150, 395, 325, 100, "platform1.png", "purple")
+            this.block2 = new Block(750, 395, 250, 100, "platform2.png", "purple")
+            this.block3 = new Block(850, 295, 150, 100, "platform3.png", "purple")
+            this.block4 = new Block(300, 195, 450, 100, "platform1.png", "purple")
+            this.block5 = new Block(200, 295, 175, 100, "platform2.png", "purple")
+            this.block6 = new Block(0, 195, 125, 100, "platform3.png", "purple")
+            this.block7 = new Block(250, 0, 250, 100, "platform1.png", "purple")
+            this.block8 = new Block(700, 0, 300, 100, "platform2.png", "purple")
 
 
-        //player
-        this.objectList.push(this.player)
-        
-        //enemies
-        this.objectList.push(this.enemy)
+            
+            //floor for the level
+            this.floor = new Block(0, canvas.height - 5, 550, 5, "", "green")
+            this.floor2 = new Block(650, canvas.height - 5, 350, 5, "", "blue")
 
-        //blocks for the level
-        this.objectList.push(this.block)
-        this.objectList.push(this.block2)
-        this.objectList.push(this.block3)
-        this.objectList.push(this.block4)
-        this.objectList.push(this.block5)
-        this.objectList.push(this.block6)
-        this.objectList.push(this.block7)
-        this.objectList.push(this.block8)
+            //door to end the level
+            this.door = new Door(900,200,100,100,"dooreffects-doorefect.png","grey",2)
 
-        //floor for the level
-        this.objectList.push(this.floor)
-        this.objectList.push(this.floor2)
-        
-        //door to end the level
-        this.objectList.push(this.door)
-        
-        //walls and roof
-        this.objectList.push(this.wall)
-        this.objectList.push(this.wall2)
-        this.objectList.push(this.roof)
+            //walls and roof
+            this.wall = new Block(1000, 0, 20, canvas.height, "", "grey")
+            this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey")
+            this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey")
+
+
+            //player
+            this.objectList.push(this.player)
+            
+            //enemies
+            this.objectList.push(this.enemy)
+
+            //blocks for the level
+            this.objectList.push(this.block)
+            this.objectList.push(this.block2)
+            this.objectList.push(this.block3)
+            this.objectList.push(this.block4)
+            this.objectList.push(this.block5)
+            this.objectList.push(this.block6)
+            this.objectList.push(this.block7)
+            this.objectList.push(this.block8)
+
+            //floor for the level
+            this.objectList.push(this.floor)
+            this.objectList.push(this.floor2)
+            
+            //door to end the level
+            this.objectList.push(this.door)
+            
+            //walls and roof
+            this.objectList.push(this.wall)
+            this.objectList.push(this.wall2)
+            this.objectList.push(this.roof)
         }
 
         if (level == 2) {
-            this.player.hp = 3;
             this.player.x = 50;
+            this.player.y = 445;
             
             this.floor = new Block(0, canvas.height - 5, canvas.width, 5, "", "green");
             this.wall = new Block(1000, 0, 20, canvas.height, "", "grey");
             this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
             this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey");
             
-            this.enemy = new Enemy(3, 325, 45, 25, 50, "", "red", 1, 0, 10, 250, 725);
-            this.enemy2 = new Enemy(3, 750, 245, 25, 50, "", "red", 1, 0, 10, 600, 824);
+            this.enemy = new Enemy(3, 325, 45, 50, 50, "fiende.png", "red", 1, 0, 10, 250, 725);
+            this.enemy2 = new Enemy(3, 750, 245, 50, 50, "fiende.png", "red", 1, 0, 10, 600, 824);
             
             this.block = new Block(150, 395, 250, 100, "platform1.png", "grey");
             this.block2 = new Block(250, 295, 250, 100, "platform1.png", "grey");
@@ -706,7 +725,7 @@ class GameEngine {
             this.block6 = new Block(850, 195, 150, 100, "platform1.png", "grey");
             this.block7 = new Block(600, 295, 400, 100, "platform1.png", "grey");
             
-            this.door = new Door(400,400,50,95,"","grey",700);
+            this.door = new Door(400,400,100,95,"dooreffects-doorefect.png","grey",3);
 
             this.objectList.push(this.player);
 
@@ -731,7 +750,6 @@ class GameEngine {
         }
 
         if (level == 3) {
-            this.player.hp = 3;
             this.player.x = 900;
             this.player.y = 50;
 
@@ -739,16 +757,16 @@ class GameEngine {
             this.block2 = new Block(100, 115, 750, 75, "platform1.png", "grey");
             this.block3 = new Block(0, 295, 850, 75, "platform1.png", "grey");
 
-            this.enemy = new Enemy(3, 500, 65, 25, 50, "", "red", 1, 0, 10, 100, 750);
-            this.enemy2 = new Enemy(3, 345, 245, 25, 50, "", "red", 1, 0, 10, 0, 825);
-            this.enemy3 = new Enemy(3, 370, 445, 25, 50, "", "red", 1, 0, 10, 105, 975);
+            this.enemy = new Enemy(3, 500, 65, 50, 50, "fiende.png", "red", 1, 0, 10, 100, 750);
+            this.enemy2 = new Enemy(3, 345, 245, 50, 50, "fiende.png", "red", 1, 0, 10, 0, 825);
+            this.enemy3 = new Enemy(3, 370, 445, 50, 50, "fiende.png", "red", 1, 0, 10, 105, 975);
             
             this.floor = new Block(0, canvas.height - 5, canvas.width, 5, "", "green");
             this.wall = new Block(1000, 0, 20, canvas.height, "", "grey");
             this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
             this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey");
 
-            this.door = new Door(50,400,50,95,"","grey",700)
+            this.door = new Door(100,400,100,95,"dooreffects-doorefect.png","grey",4)
 
             this.objectList.push(this.block);
             this.objectList.push(this.block2);
@@ -769,7 +787,6 @@ class GameEngine {
         }
 
         if (level == 4) {
-            this.player.hp = 3;
             this.player.x = 50;
             this.player.y = 245;
 
@@ -779,15 +796,15 @@ class GameEngine {
             this.block4 = new Block(675, 295, 125, 100, "platform1.png", "grey");
             this.block5 = new Block(875, 295, 125, 100, "platform1.png", "grey");
 
-            this.enemy = new Enemy(3, 275, 245, 25, 50, "", "red", 1, 0, 10, 225, 325);
-            this.enemy2 = new Enemy(3, 500, 245, 25, 50, "", "red", 1, 0, 10, 450, 550);
-            this.enemy3 = new Enemy(3, 725, 245, 25, 50, "", "red", 1, 0, 10, 675, 775);
+            this.enemy = new Enemy(3, 275, 245, 50, 50, "fiende.png", "red", 1, 0, 10, 225, 325);
+            this.enemy2 = new Enemy(3, 500, 245, 50, 50, "fiende.png", "red", 1, 0, 10, 450, 550);
+            this.enemy3 = new Enemy(3, 725, 245, 50, 50, "fiende.png", "red", 1, 0, 10, 675, 775);
 
             this.wall = new Block(1000, 0, 20, canvas.height, "", "grey");
             this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
             this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey");
 
-            this.door = new Door(925, 200, 50, 95, "", "grey", 700);
+            this.door = new Door(875, 200, 100, 95, "dooreffects-doorefect.png", "grey", 5);
 
             this.objectList.push(this.block);
             this.objectList.push(this.block2);
@@ -809,7 +826,6 @@ class GameEngine {
         }
 
         if(level == 5) {
-            this.player.hp = 3;
             this.player.x = 50;
             this.player.y = 45;
 
@@ -819,7 +835,7 @@ class GameEngine {
             this.block4 = new Block(400, 180, 250, 50, "platform1.png", "grey");
             this.block5 = new Block(700, 280, 250, 50, "platform1.png", "grey");
 
-            this.boss = new Boss(500, 295, 15, 100, 350);
+            this.boss = new Boss(400, 215, 15, 100, 350);
 
             this.wall = new Block(1000, 0, 20, canvas.height, "", "grey");
             this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
