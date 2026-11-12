@@ -6,6 +6,7 @@ const basejump = new Audio('Jump.mp3')
 const baseland = new Audio('Land.mp3')
 const playerdeath = new Audio('highdeath sfx.mp3')
 const basesword = new Audio('swordswing.mp3')
+const david = new Audio("davidattack.mp3")
 let canland = false
 let candie = true
 let timeplayed = 0
@@ -413,12 +414,13 @@ class Player extends MoveableObjects {
 }
 
 class Enemy extends MoveableObjects {
-    constructor(hp, x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight,leftRange, rightRange) {
+    constructor(hp, x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight, leftRange, rightRange, attackCooldown=0, direction="right") {
         super(x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight,canland)
         this.hp = hp
         this.leftRange = leftRange
         this.rightRange = rightRange
-        this.attackCooldown = 0
+        this.attackCooldown = attackCooldown
+        this.direction = direction;
         this.jumpCooldown = 0
     }
 
@@ -436,18 +438,9 @@ class Enemy extends MoveableObjects {
                 basesword.play()
             }
             if (this.attackCooldown >= 1) {
-                this.attackCooldown += 1
+                this.attackCooldown -= 1
             }
-            if (this.attackCooldown >= 180) {
-                this.attackCooldown = 0
-            }
-    
-            if (this.jumpCooldown >= 1) {
-                this.jumpCooldown += 1
-            }
-            if (this.jumpCooldown >= 120) {
-                this.jumpCooldown = 0
-            }
+
         }
     }
 
@@ -486,7 +479,6 @@ class Enemy extends MoveableObjects {
 
     attacking(objList) {
         ctx.fillStyle = "black"
-        this.attackCooldown += 1
 
         if (this.direction === "right") {
             ctx.fillRect(this.x + this.width, this.y - 20, 100, this.height + 40)
@@ -497,7 +489,7 @@ class Enemy extends MoveableObjects {
                         otherObj.x <= this.x + this.width + 100 &&
                         otherObj.y + otherObj.height >= this.y - 20 &&
                         otherObj.y + otherObj.height <= this.y + this.height + 20) {
-                            this.attackCooldown = 21
+                            this.attackCooldown = 200
                             otherObj.hp -= 1
 
                             if (otherObj.hp <= 0) {
@@ -517,7 +509,7 @@ class Enemy extends MoveableObjects {
                         otherObj.x >= this.x - 100 &&
                         otherObj.y + otherObj.height >= this.y - 20 &&
                         otherObj.y + otherObj.height <= this.y + this.height + 20) {
-                            this.attackCooldown = 21
+                            this.attackCooldown = 200
                             otherObj.hp -= 1
 
                             if (otherObj.hp <= 0) {
@@ -527,14 +519,47 @@ class Enemy extends MoveableObjects {
                 }
             }
         }
+        if (this.attackCooldown <= 0) {
+            this.attackCooldown = 200;
+        }
     }
 }
 
 class Boss extends Enemy {
-    constructor(hp, attackCooldown) {
-        super(x, y, 50, 100, imageSrc, color, speedX, deltaY, jumpHeight,canland)
-        this.hp = hp
-        this.attackCooldown = attackCooldown
+    constructor(x, y, hp, attackCooldown, cooldown) {
+        super(hp, x, y, 50, 100, "", "red", 1, 0, 0, false, 0, 0, 100, "right");
+
+        this.attackCooldown = attackCooldown;
+        this.cooldown = cooldown;
+    }
+
+    update(ge) {
+        for (let otherObj of ge.objectList) {
+            if ((otherObj instanceof Player) && otherObj.x + otherObj.width/2 < this.x + this.width/2) {
+                this.direction = "left";
+            }
+            if ((otherObj instanceof Player) && otherObj.x + otherObj.width/2 > this.x + this.width/2) {
+                this.direction = "right";
+            }
+        }
+        if (this.attackCooldown <= 0) {
+            this.attack(ge);
+            this.attackCooldown = this.cooldown;
+        }
+        this.attackCooldown -= 1;
+    }
+
+    attack(ge) {
+        const objList = ge.objectList;
+        const shockwave = new Enemy(30, this.x + this.width/2, 230, 50, 165, "", "purple", 2, 0, 0, -5000000000, 1500000000, 999999967, this.direction);
+        if (this.direction == "right") {
+            shockwave.speedX = 2
+        }
+        if (this.direction == "left") {
+            shockwave.speedX = -2
+        }
+        ge.objectList.push(shockwave);
+        david.play()
     }
 }
 
@@ -790,9 +815,11 @@ class GameEngine {
 
             this.block = new Block(0, 95, 150, 100, "platform1.png", "grey");
             this.block2 = new Block(0, 395, 1000, 100, "platform1.png", "grey");
-            this.block3 = new Block(100, 295, 250, 25, "platform1.png", "grey");
-            this.block4 = new Block(400, 195, 250, 25, "platform1.png", "grey");
-            this.block5 = new Block(700, 295, 250, 25, "platform1.png", "grey");
+            this.block3 = new Block(100, 280, 250, 50, "platform1.png", "grey");
+            this.block4 = new Block(400, 180, 250, 50, "platform1.png", "grey");
+            this.block5 = new Block(700, 280, 250, 50, "platform1.png", "grey");
+
+            this.boss = new Boss(500, 295, 15, 100, 350);
 
             this.wall = new Block(1000, 0, 20, canvas.height, "", "grey");
             this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
@@ -803,6 +830,8 @@ class GameEngine {
             this.objectList.push(this.block3);
             this.objectList.push(this.block4);
             this.objectList.push(this.block5);
+
+            this.objectList.push(this.boss);
 
             this.objectList.push(this.wall);
             this.objectList.push(this.wall2);
