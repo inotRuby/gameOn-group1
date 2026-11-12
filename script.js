@@ -98,7 +98,7 @@ class GameObjects {
                 return true
         }
         else {
-            this.active = false
+            return false
         }
     }
 
@@ -116,7 +116,7 @@ class MoveableObjects extends GameObjects {
         this.canland = canland
     }
 
-    movement(objList, obj){
+    movement(objList){
         // Allows the player to move unless they are going to move into an object
         
     }
@@ -144,20 +144,18 @@ class MoveableObjects extends GameObjects {
         super.update()
     }
     
-    gravity(objList, obj) {
+    gravity(objList) {
         // Checks if we are in the air and if we are make the player accelerate down
         this.deltaY += gravconst
 
         this.y += this.deltaY
-        console.log(this.canland)
-        console.log(timeplayed)
         for (let otherObj of objList) {
             
-        if ((otherObj !== obj) && (!(otherObj instanceof Door))) {
+        if ((otherObj !== this) && !(otherObj instanceof Door)) {
             if (this.deltaY > 0.4){ 
                         this.canland = true
                     }
-            if ((this.collision(obj, otherObj))) {
+            if ((this.collision(this, otherObj))) {
                     if (this.deltaY < 0 && canland) {
                         this.deltaY = 0
                         landoverlap()
@@ -165,13 +163,14 @@ class MoveableObjects extends GameObjects {
                     }
                     if (this.deltaY > 0 && 
                         (this.x > otherObj.x && this.x < otherObj.x + otherObj.width) ||
-                        (this.x + this.width > otherObj.x && this.x + this.width < otherObj.x + otherObj.width)
+                        (this.x + this.width > otherObj.x && this.x + this.width < otherObj.x + otherObj.width &&
+                        this.deltaY > 0)
                         ) {
                             this.y = otherObj.y - this.height
                             this.deltaY = 0
                         }
                     
-                    if((this.canland && (obj instanceof Player)) || ((obj instanceof Enemy) && this.canland)){
+                    if((this.canland && (this instanceof Player)) || ((this instanceof Enemy) && this.canland)){
                         this.canland = false
                         landoverlap()
                         timeplayed += 1
@@ -222,21 +221,21 @@ class Player extends MoveableObjects {
         this.attackCooldown = 0
     }
 
-    update(objList, obj) {
+    update(ge) {
         // add attack function via update function
-        
+        const objList = ge.objectList;
         //extra logic for the player class
         this.changeimage()
         if (this.speedX > 0) this.direction = "right";
         if (this.speedX < 0) this.direction = "left";
         
-        this.movement(objList, obj)
-        this.gravity(objList, obj)
+        this.movement(objList)
+        this.gravity(objList)
         
         
         for (let otherObj of objList) {
             if (otherObj instanceof Enemy) {
-                if (this.collision(obj, otherObj) && otherObj.active) {
+                if (this.collision(this, otherObj) && otherObj.active) {
                     if (this.hp > 0) {
                         this.hp -= 1 
                     }
@@ -285,7 +284,7 @@ class Player extends MoveableObjects {
                             this.attackCooldown = 21
                             otherObj.hp -= 1
                             swordoverlap()
-                            console.log(`enemy hp: ${otherObj.hp}`)
+
                             if (otherObj.hp <= 0) {
                                 otherObj.active = false
                             }
@@ -298,7 +297,7 @@ class Player extends MoveableObjects {
             
             for (let otherObj of objList) {
                 ctx.fillRect(this.x, this.y - 20, -100, this.height + 40)
-                console.log("draw our hitbox")
+
                 if (otherObj instanceof Enemy) {
                     if (otherObj.x + otherObj.width <= this.x &&
                         otherObj.x >= this.x - 100 &&
@@ -306,7 +305,7 @@ class Player extends MoveableObjects {
                         otherObj.y + otherObj.height <= this.y + this.height + 20) {
                             this.attackCooldown = 21
                             otherObj.hp -= 1
-                            console.log(`enemy hp: ${otherObj.hp}`)
+
                             if (otherObj.hp <= 0) {
                                 otherObj.active = false
                             }
@@ -318,8 +317,8 @@ class Player extends MoveableObjects {
 
 
 
-    gravity(objList, obj) {
-        super.gravity(objList, obj)
+    gravity(objList) {
+        super.gravity(objList)
     }
     
     handleMoving(keyList, objList) {
@@ -339,9 +338,9 @@ class Player extends MoveableObjects {
         
     }
 
-    movement(objList, obj) {
+    movement(objList) {
         for (let otherObj of objList) {
-            if ((otherObj !== obj) && (!(otherObj instanceof Door))){
+            if ((otherObj !== this) && !(otherObj instanceof Door) && !(otherObj instanceof Enemy)){
                 if (this.y >= otherObj.y &&
                     this.y <= otherObj.y + otherObj.height ||
                     this.y + this.height > otherObj.y &&
@@ -410,27 +409,27 @@ class Player extends MoveableObjects {
 }
 
 class Enemy extends MoveableObjects {
-    constructor(hp, x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight,range) {
+    constructor(hp, x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight,leftRange, rightRange) {
         super(x, y, width, height, imageSrc, color, speedX, deltaY, jumpHeight,canland)
         this.hp = hp
-        this.range = range
+        this.leftRange = leftRange
+        this.rightRange = rightRange
         this.attackCooldown = 0
         this.jumpCooldown = 0
     }
 
-    update(objList, obj) {
+    update(ge) {
 
-        
+        const objList = ge.objectList;
         if (this.active) {
             
-            this.movement(objList, obj)
-            this.gravity(objList, obj)
+            this.movement(objList)
             if (this.speedX > 0) this.direction = "right";
             if (this.speedX < 0) this.direction = "left";
             
             if (this.attackCooldown <= 20) {
                 this.attacking(objList)
-                swordoverlap()
+                basesword.play()
             }
             if (this.attackCooldown >= 1) {
                 this.attackCooldown += 1
@@ -449,7 +448,17 @@ class Enemy extends MoveableObjects {
     }
 
 
-    movement(objList, obj) {
+    movement(objList) {
+
+        this.x += this.speedX;
+        if (this.x > this.rightRange) {
+            this.speedX *= -1;
+        }
+        if(this.x < this.leftRange) {
+            this.speedX *= -1;
+        }
+
+        /*
         for(let otherObj of objList) {
             if (otherObj instanceof Player && (otherObj.x > obj.x - obj.range && otherObj.x < obj.x + obj.range)) {
                 if (this.x + this.width/2 > otherObj.x + otherObj.width/2) {
@@ -465,14 +474,10 @@ class Enemy extends MoveableObjects {
                     this.jump(objList, this)
                     
                 }
-                if (this.x + this.width + this.speedX >= otherObj.x &&
-                    this.x + this.speedX <= otherObj.x + otherObj.width &&
-                    Math.round(this.y) + this.height >= otherObj.y &&
-                    Math.round(this.y) <= otherObj.y + otherObj.height) {
-                }
                 this.x += this.speedX
             }
         }
+        */
     }
 
     attacking(objList) {
@@ -490,7 +495,7 @@ class Enemy extends MoveableObjects {
                         otherObj.y + otherObj.height <= this.y + this.height + 20) {
                             this.attackCooldown = 21
                             otherObj.hp -= 1
-                            console.log(`player hp: ${otherObj.hp}`)
+
                             if (otherObj.hp <= 0) {
                                 otherObj.active = false
                             }
@@ -510,7 +515,7 @@ class Enemy extends MoveableObjects {
                         otherObj.y + otherObj.height <= this.y + this.height + 20) {
                             this.attackCooldown = 21
                             otherObj.hp -= 1
-                            console.log(`player hp: ${otherObj.hp}`)
+
                             if (otherObj.hp <= 0) {
                                 otherObj.active = false
                             }
@@ -531,11 +536,14 @@ class Door extends StaticObjects {
         super(x,y,width,height,imageSrc,color)
         this.xcoord = xcoord
     }
-    update(objList){
+    update(ge){
+        const objList = ge.objectList;
         for(let otherObj of objList){
             if (otherObj instanceof Player || otherObj instanceof Enemy){
                 if((otherObj.x + otherObj.width> this.x && otherObj.x < this.x+this.width) && (otherObj.y +otherObj.height>this.y && otherObj.y < this.y + this.height)){
-                    otherObj.x += this.xcoord
+                    ge.clear();
+                    ge.setLevel(4);
+                    //otherObj.x += this.xcoord
                 }
             }
         }
@@ -556,8 +564,36 @@ class GameEngine {
         //player
         this.player = new Player(50, 450, 3, 0)
 
-        //enemies
-        this.enemy = new Enemy(3, 325, 145, 25, 50, "", "red", 0, 0, 10,270)
+        this.setLevel(1);
+        this.initInput()
+    }
+
+    initInput() {
+        window.addEventListener("keydown", (e) => {
+            this.keyList[e.key] = true;
+        })
+
+        window.addEventListener("keyup", (e) => {
+            this.keyList[e.key] = false;
+        })
+
+        window.addEventListener("mousedown", (e) => {
+            if (this.player.attackCooldown <= 20) {
+                attackAllowed = true
+            }
+        })
+
+        window.addEventListener("keydown", (e) => {
+            if (e.key == "e" && this.player.attackCooldown <= 20) {  
+                attackAllowed = true
+            }
+        })
+    }
+
+    setLevel(level) {
+        if (level == 1) {
+            //enemies
+        this.enemy = new Enemy(3, 325, 145, 25, 50, "", "red", 1, 0, 10,300, 725)
 
         //blocks for the level
         this.block = new Block(150, 395, 325, 100, "platform1.png", "purple")
@@ -588,7 +624,7 @@ class GameEngine {
         this.objectList.push(this.player)
         
         //enemies
-        //this.objectList.push(this.enemy)
+        this.objectList.push(this.enemy)
 
         //blocks for the level
         this.objectList.push(this.block)
@@ -605,36 +641,128 @@ class GameEngine {
         this.objectList.push(this.floor2)
         
         //door to end the level
-        //this.objectList.push(this.door)
+        this.objectList.push(this.door)
         
         //walls and roof
         this.objectList.push(this.wall)
         this.objectList.push(this.wall2)
         this.objectList.push(this.roof)
-        //this.objectList.push(this.door)
-        this.initInput()
+        }
+
+        if (level == 2) {
+            this.player.hp = 3;
+            this.player.x = 50;
+            
+            this.floor = new Block(0, canvas.height - 5, canvas.width, 5, "", "green");
+            this.wall = new Block(1000, 0, 20, canvas.height, "", "grey");
+            this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
+            this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey");
+            
+            this.enemy = new Enemy(3, 325, 45, 25, 50, "", "red", 1, 0, 10, 250, 725);
+            this.enemy2 = new Enemy(3, 750, 245, 25, 50, "", "red", 1, 0, 10, 600, 824);
+            
+            this.block = new Block(150, 395, 250, 100, "platform1.png", "grey");
+            this.block2 = new Block(250, 295, 250, 100, "platform1.png", "grey");
+            this.block3 = new Block(-100, 195, 250, 100, "platform1.png", "grey");
+            this.block4 = new Block(400, 195, 100, 100, "platform1.png", "grey");
+            this.block5 = new Block(250, 95, 500, 100, "platform1.png", "grey");
+            this.block6 = new Block(850, 195, 150, 100, "platform1.png", "grey");
+            this.block7 = new Block(600, 295, 400, 100, "platform1.png", "grey");
+            
+            this.door = new Door(400,400,50,95,"","grey",700);
+
+            this.objectList.push(this.player);
+
+            this.objectList.push(this.floor);
+            this.objectList.push(this.wall);
+            this.objectList.push(this.wall2);
+            this.objectList.push(this.roof);
+
+            this.objectList.push(this.block);
+            this.objectList.push(this.block2);
+            this.objectList.push(this.block3);
+            this.objectList.push(this.block4);
+            this.objectList.push(this.block5);
+            this.objectList.push(this.block6);
+            this.objectList.push(this.block7);
+
+            this.objectList.push(this.door);
+
+            this.objectList.push(this.enemy);
+            this.objectList.push(this.enemy2);
+
+        }
+
+        if (level == 3) {
+            this.player.hp = 3;
+            this.player.x = 900;
+            this.player.y = 50;
+
+            this.block = new Block(850, 95, 150, 100, "platform1.png", "grey");
+            this.block2 = new Block(100, 115, 750, 75, "platform1.png", "grey");
+            this.block3 = new Block(0, 295, 850, 75, "platform1.png", "grey");
+
+            this.enemy = new Enemy(3, 500, 65, 25, 50, "", "red", 1, 0, 10, 100, 750);
+            this.enemy2 = new Enemy(3, 345, 245, 25, 50, "", "red", 1, 0, 10, 0, 825);
+            this.enemy3 = new Enemy(3, 370, 445, 25, 50, "", "red", 1, 0, 10, 105, 975);
+            
+            this.floor = new Block(0, canvas.height - 5, canvas.width, 5, "", "green");
+            this.wall = new Block(1000, 0, 20, canvas.height, "", "grey");
+            this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
+            this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey");
+
+            this.door = new Door(50,400,50,95,"","grey",700)
+
+            this.objectList.push(this.block);
+            this.objectList.push(this.block2);
+            this.objectList.push(this.block3);
+
+            this.objectList.push(this.enemy);
+            this.objectList.push(this.enemy2);
+            this.objectList.push(this.enemy3);
+
+            this.objectList.push(this.door);
+
+            this.objectList.push(this.floor);
+            this.objectList.push(this.wall);
+            this.objectList.push(this.wall2);
+            this.objectList.push(this.roof);
+            this.objectList.push(this.player);
+
+        }
+
+        if (level == 4) {
+            this.player.hp = 3;
+            this.player.x = 50;
+            this.player.y = 245;
+
+            this.block = new Block(0, 295, 100, 100, "platform1.png", "grey");
+            this.block2 = new Block(200, 295, 100, 100, "platform1.png", "grey");
+            this.block3 = new Block(400, 295, 100, 100, "platform1.png", "grey");
+            this.block4 = new Block(600, 295, 100, 100, "platform1.png", "grey");
+            this.block5 = new Block(800, 295, 100, 100, "platform1.png", "grey");
+
+            this.floor = new Block(0, canvas.height - 5, canvas.width, 5, "", "green");
+            this.wall = new Block(1000, 0, 20, canvas.height, "", "grey");
+            this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
+            this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey");
+
+            this.objectList.push(this.block);
+            this.objectList.push(this.block2);
+            this.objectList.push(this.block3);
+            this.objectList.push(this.block4);
+            this.objectList.push(this.block5);
+
+            this.objectList.push(this.floor);
+            this.objectList.push(this.wall);
+            this.objectList.push(this.wall2);
+            this.objectList.push(this.roof);
+            this.objectList.push(this.player);
+        }
     }
 
-    initInput() {
-        window.addEventListener("keydown", (e) => {
-            this.keyList[e.key] = true;
-        })
-
-        window.addEventListener("keyup", (e) => {
-            this.keyList[e.key] = false;
-        })
-
-        window.addEventListener("mousedown", (e) => {
-            if (this.player.attackCooldown <= 20) {
-                attackAllowed = true
-            }
-        })
-
-        window.addEventListener("keydown", (e) => {
-            if (e.key == "e" && this.player.attackCooldown <= 20) {  
-                attackAllowed = true
-            }
-        })
+    clear() {
+        this.objectList = [];
     }
 
     startGame() {
@@ -649,7 +777,7 @@ class GameEngine {
         this.player.handleMoving(this.keyList, this.objectList)
         
         for (let obj of this.objectList) {
-            obj.update(this.objectList, obj)
+            obj.update(this)
             obj.drawBox(this.ctx)
         }
         
