@@ -16,6 +16,8 @@ let attackAllowed = false
 
 let dead = false;
 
+let mainMenu = false;
+
 function jumpoverlap(){
     const jump = basejump.cloneNode()
     jump.play()
@@ -84,6 +86,11 @@ class GameObjects {
                 this.width,
                 this.height
             );
+            if (this instanceof Block) {
+                ctx.fillStyle = "#b0881a";
+                ctx.lineWidth = 1;
+                ctx.strokeRect(this.x, this.y, this.width, this.height);
+            }
         }
         else {
             ctx.fillStyle = this.color
@@ -629,7 +636,7 @@ class GameEngine {
         //player
         this.player = new Player(50, 450, 1, 0)
 
-        this.setLevel(1);
+        this.setLevel(0);
         this.initInput()
     }
 
@@ -653,9 +660,32 @@ class GameEngine {
                 attackAllowed = true
             }
         })
+
+        window.addEventListener("mousedown", (e) => {
+            console.log(e)
+            if (e.offsetX >= 50 && e.offsetX <= 300 && e.offsetY >= 200 && e.offsetY <= 450 && mainMenu) {
+                mainMenu = false;
+                this.clear();
+                this.setLevel(1);
+            }
+
+        })
     }
 
     setLevel(level) {
+        if (level == 0) {
+            mainMenu = true
+            this.block = new Block(0, 0, canvas.width, canvas.height, "mainMenu.png", "yellow")
+            this.block2 = new Block(50, 200, 250, 150, "", "gold")
+            ctx.fillStyle = "red"
+            ctx.font = "15px Papyrus"
+            ctx.fillText("Play", 50, 200, 250)
+
+
+            this.objectList.push(this.block)
+            this.objectList.push(this.block2)
+        }
+
         if (level == 1) {
             this.player.x = 50;
             this.player.y = 440;
@@ -664,12 +694,12 @@ class GameEngine {
 
             //blocks for the level
             this.block = new Block(150, 395, 325, 100, "platform1.png", "purple")
-            this.block2 = new Block(750, 395, 250, 100, "platform1.png", "purple")
+            this.block2 = new Block(750, 395, 250, 100, "platform2.png", "purple")
             this.block3 = new Block(850, 295, 150, 100, "platform1.png", "purple")
             this.block4 = new Block(300, 195, 450, 100, "platform1.png", "purple")
-            this.block5 = new Block(200, 295, 175, 100, "platform1.png", "purple")
-            this.block6 = new Block(0, 195, 125, 100, "platform1.png", "purple")
-            this.block7 = new Block(250, 0, 250, 100, "platform1.png", "purple")
+            this.block5 = new Block(200, 295, 175, 100, "platform2.png", "purple")
+            this.block6 = new Block(0, 195, 125, 100, "platform4.png", "purple")
+            this.block7 = new Block(250, 0, 250, 100, "platform3.png", "purple")
             this.block8 = new Block(700, 0, 300, 100, "platform1.png", "purple")
 
 
@@ -679,7 +709,7 @@ class GameEngine {
             this.floor2 = new Block(650, canvas.height - 5, 350, 5, "", "#7a6842")
 
             //door to end the level
-            this.door = new Door(900,200,100,100,"dooreffects-doorefect.png","grey",5)
+            this.door = new Door(900,195,80,100,"levelDoor.png","grey",4)
 
             //walls and roof
             this.wall = new Block(1000, 0, 20, canvas.height, "", "grey")
@@ -736,7 +766,7 @@ class GameEngine {
             this.block6 = new Block(850, 195, 150, 100, "platform1.png", "grey");
             this.block7 = new Block(600, 295, 400, 100, "platform1.png", "grey");
             
-            this.door = new Door(400,400,100,95,"dooreffects-doorefect.png","grey",3);
+            this.door = new Door(400,400,80,95,"levelDoor.png","grey",3);
 
             this.objectList.push(this.player);
 
@@ -777,7 +807,7 @@ class GameEngine {
             this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
             this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey");
 
-            this.door = new Door(100,400,100,95,"dooreffects-doorefect.png","grey",4)
+            this.door = new Door(120,400,80,95,"levelDoor.png","grey",4)
 
             this.objectList.push(this.block);
             this.objectList.push(this.block2);
@@ -815,7 +845,7 @@ class GameEngine {
             this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
             this.roof = new Block(0, -10, 3 * canvas.width, 10, "", "grey");
 
-            this.door = new Door(875, 200, 100, 95, "dooreffects-doorefect.png", "grey", 5);
+            this.door = new Door(895, 200, 80, 95, "levelDoor.png", "grey", 5);
 
             this.objectList.push(this.block);
             this.objectList.push(this.block2);
@@ -886,6 +916,13 @@ class GameEngine {
         for (let obj of this.objectList) {
             obj.update(this)
             obj.drawBox(this.ctx)
+            if (mainMenu) {
+                ctx.fillStyle = "#963a18";
+                ctx.font = "100px Papyrus";
+                ctx.fillText("Play", 75, 310, 250);
+                ctx.lineWidth = 4;
+                ctx.strokeRect(50, 200, 250, 150);
+            }
         }
         if (dead) {
             this.player.death()

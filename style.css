@@ -11,7 +11,7 @@ p{
 canvas {
     position: relative;
     left: 100px;
-    background-color: rgb(198, 170, 110);        
+    background-image: url("levelBackground.png");        
     border: 4px solid #333;
     margin-left: 15px;
     }
