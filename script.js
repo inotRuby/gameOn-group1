@@ -154,7 +154,7 @@ class MoveableObjects extends GameObjects {
         this.y += this.deltaY
         for (let otherObj of objList) {
             
-        if ((otherObj !== this) && !(otherObj instanceof Door)) {
+        if ((otherObj !== this) && !(otherObj instanceof Door) && otherObj.active) {
             if (this.deltaY > 0.4){ 
                         this.canland = true
                     }
@@ -188,7 +188,7 @@ class MoveableObjects extends GameObjects {
         // Checks if we are on the ground and if we are make us jump up
         for (let otherObj of objList) {
                 if (obj !== otherObj) {
-                if (this.collision(obj, otherObj)){
+                if (this.collision(obj, otherObj) && otherObj.active){
                     if (this.x + this.width + this.speedX > otherObj.x &&
                         this.x + this.speedX < otherObj.x + otherObj.width &&
                         this.y + this.height <= otherObj.y) {
@@ -336,13 +336,13 @@ class Player extends MoveableObjects {
         else {
             this.activeimage = 0
         }
-        if (keyList[" "]) this.jump(objList, this)
+        if (keyList[" "] || keyList["w"]) this.jump(objList, this)
         
     }
 
     movement(objList) {
         for (let otherObj of objList) {
-            if ((otherObj !== this) && !(otherObj instanceof Door) && !(otherObj instanceof Enemy)){
+            if ((otherObj !== this) && !(otherObj instanceof Door) && !(otherObj instanceof Enemy) && otherObj.active){
                 if (this.y >= otherObj.y &&
                     this.y <= otherObj.y + otherObj.height ||
                     this.y + this.height > otherObj.y &&
@@ -360,7 +360,7 @@ class Player extends MoveableObjects {
         return
     }
 
-    death() {
+    death(ge) {
         // Check if player died by any means added in future and draw gameover! + restart button
         dead = true;
         if (candie) {
@@ -380,15 +380,17 @@ class Player extends MoveableObjects {
         ctx.fillText("Restart?", canvas.width/2 - 140, 280, 280)
         this.active = false
         window.addEventListener("mousedown", (e) => {
+            console.log(dead)
             if (e.offsetX >= canvas.width/2 - 150 &&
                 e.offsetX <= canvas.width/2 + 150 &&
                 e.offsetY >= 175 &&
-                e.offsetY <= 175 + 150) {
+                e.offsetY <= 175 + 150 &&
+                dead) {
                     dead = false;
                     this.active = true;
-                    this.x = 50;
-                    this.y = 445;
-                    ge.setLevel(1)
+
+                    ge.clear();
+                    ge.setLevel(ge.door.level - 1);
                 }
         })
     }
@@ -549,20 +551,23 @@ class Enemy extends MoveableObjects {
 class Boss extends Enemy {
     constructor(x, y, hp, attackCooldown, cooldown) {
         super(hp, x, y, 200, 180, "davidattackevil.png", "red", 1, 0, 0, false, 0, 0, 100, "right");
-
+        //davidattackevil.png
         this.attackCooldown = attackCooldown;
         this.cooldown = cooldown;
     }
 
     update(ge) {
         for (let otherObj of ge.objectList) {
+
             if ((otherObj instanceof Player) && otherObj.x + otherObj.width/2 < this.x + this.width/2) {
                 this.direction = "left";
-                this.imageSrc = "davidattackmirror.png";
+                this.image.src = "davidattackmirror.png";
+                //davidattackmirror.png
             }
             if ((otherObj instanceof Player) && otherObj.x + otherObj.width/2 > this.x + this.width/2) {
                 this.direction = "right";
-                this.imageSrc = "davidattackevil.png";
+                this.image.src = "davidattackevil.png";
+                //davidattackevil.png
             }
         }
         if (this.attackCooldown <= 0) {
@@ -599,7 +604,7 @@ class Door extends StaticObjects {
     update(ge){
         const objList = ge.objectList;
         for(let otherObj of objList){
-            if (otherObj instanceof Player || otherObj instanceof Enemy){
+            if (otherObj instanceof Player){
                 if((otherObj.x + otherObj.width> this.x && otherObj.x < this.x+this.width) && (otherObj.y +otherObj.height>this.y && otherObj.y < this.y + this.height)){
                     ge.clear();
                     ge.setLevel(this.level);
@@ -659,13 +664,13 @@ class GameEngine {
 
             //blocks for the level
             this.block = new Block(150, 395, 325, 100, "platform1.png", "purple")
-            this.block2 = new Block(750, 395, 250, 100, "platform2.png", "purple")
-            this.block3 = new Block(850, 295, 150, 100, "platform3.png", "purple")
+            this.block2 = new Block(750, 395, 250, 100, "platform1.png", "purple")
+            this.block3 = new Block(850, 295, 150, 100, "platform1.png", "purple")
             this.block4 = new Block(300, 195, 450, 100, "platform1.png", "purple")
-            this.block5 = new Block(200, 295, 175, 100, "platform2.png", "purple")
-            this.block6 = new Block(0, 195, 125, 100, "platform3.png", "purple")
+            this.block5 = new Block(200, 295, 175, 100, "platform1.png", "purple")
+            this.block6 = new Block(0, 195, 125, 100, "platform1.png", "purple")
             this.block7 = new Block(250, 0, 250, 100, "platform1.png", "purple")
-            this.block8 = new Block(700, 0, 300, 100, "platform2.png", "purple")
+            this.block8 = new Block(700, 0, 300, 100, "platform1.png", "purple")
 
 
             
@@ -674,7 +679,7 @@ class GameEngine {
             this.floor2 = new Block(650, canvas.height - 5, 350, 5, "", "#7a6842")
 
             //door to end the level
-            this.door = new Door(900,200,100,100,"dooreffects-doorefect.png","grey",2)
+            this.door = new Door(900,200,100,100,"dooreffects-doorefect.png","grey",5)
 
             //walls and roof
             this.wall = new Block(1000, 0, 20, canvas.height, "", "grey")
@@ -841,7 +846,7 @@ class GameEngine {
             this.block4 = new Block(400, 180, 250, 50, "platform1.png", "grey");
             this.block5 = new Block(700, 280, 250, 50, "platform1.png", "grey");
 
-            this.boss = new Boss(400, 215, 15, 100, 350);
+            this.boss = new Boss(425, 215, 15, 100, 350);
 
             this.wall = new Block(1000, 0, 20, canvas.height, "", "grey");
             this.wall2 = new Block(-10, 0, 10, canvas.height, "", "grey");
